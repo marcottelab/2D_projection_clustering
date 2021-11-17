@@ -26,3 +26,6 @@ python cluster_image_embeddings.py
 ## Unit tests
 python test_cluster_image_embeddings.py
 
+## References
+Code to compute evaluation metrics is adapted from https://github.com/marcottelab/super.complex and https://github.com/marcottelab/protein_complex_maps
+
