@@ -6,7 +6,7 @@ Created on Wed Oct 20 13:43:45 2021
 """
 
 from eval_complex import compute_metrics
-from sklearn.cluster import DBSCAN,AffinityPropagation,MeanShift,OPTICS,Birch
+from sklearn.cluster import DBSCAN,AffinityPropagation,MeanShift,OPTICS,Birch, estimate_bandwidth
 from sklearn.metrics import silhouette_score
 from img2vec_pytorch import Img2Vec
 from PIL import Image
@@ -28,7 +28,7 @@ def get_config(dataset='real'):
     images_file_name (string): input mrcs file containing stack of images
     images_true_labels (string): true cluster labels in the format: name list_of_image_indices
     sep (string): Separater between name of cluster and its members
-    index_start (integer): Index at which images are started being numbered
+    index_start (integer): Index at which images are started being numbered, ex: 0, 1, etc
     out_dir (string): output directory name for results (will be created if it does not exist)
 
     '''
@@ -94,7 +94,7 @@ def get_image_embedding(data,embedding_model = 'resnet-18'):
     embedding_model (string): Model name - one of 'alexnet', 'vgg','densenet','resnet-18'
     
     Returns:
-    vectors
+    vectors (numpy.ndarray): Array of image embeddings 
     '''
     # Initialize Img2Vec
     img2vec = Img2Vec(model=embedding_model) 
@@ -125,13 +125,65 @@ def get_image_embedding(data,embedding_model = 'resnet-18'):
 
 
 def get_cluster_wise_indices(n_clus,labels_clustered):
+    '''
+    Convert list of data index-wise cluster member names to clusterwise data indices
+    
+    Parameters:
+    n_clus (int): No. of clusters predicted
+    labels_clustered (list[int]): List of non-overlapping cluster numbers each data point belongs to. 
+        List indices correspond to the data point in that index in the data matrix
+        
+    Returns:
+    clusterwise_indices (list[list[int]]): List of clusters with members given by their indices
+
+    '''
     start_ind = 0
     end_ind = n_clus
     if -1 in labels_clustered: # Only one cluster
         start_ind = -1
         end_ind = n_clus-1
         
-    return [list(np.where(labels_clustered == i)[0]) for i in range(start_ind,end_ind)]
+    clusterwise_indices = [list(np.where(labels_clustered == i)[0]) for i in range(start_ind,end_ind)]
+    return clusterwise_indices
+
+
+def cluster_data(data_to_cluster,clustering_method,index_start):
+    '''
+    Cluster vectors of image embeddings 
+    
+    Parameters:
+    data_to_cluster (numpy.ndarray): Array of image embeddings 
+    clustering_method (sklearn.cluster._method.METHOD): method is a sckit learn clustering method with parameters, 
+        ex: DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation(), etc     
+    index_start (integer): Index at which images are started being numbered, ex: 0, 1, etc
+    
+    Returns:
+    n_clus (int): No. of clusters predicted
+    clusterwise_indices_str (list[tuple(set(string),float)]): List of clusters, each is a tuple of the cluster indices and cluster score (1 by default)
+        ex: [({'0', '1'}, 1)]
+    unsupervised_score_silhouette (float): Silhouette score for the clustering, range between [-1,1]. Higher score implies better separability of clusters,
+        -2 if only one cluster or can't be otherwise computed
+    '''
+    
+    if clustering_method == MeanShift():
+        bandwidth = estimate_bandwidth(data_to_cluster)
+        clustering_method = MeanShift(bandwidth = bandwidth)
+        
+    clustering = clustering_method.fit(data_to_cluster)
+    labels_clustered = clustering.labels_
+    print(clustering_method)
+    try:
+        unsupervised_score_silhouette = silhouette_score(data_to_cluster, labels_clustered, metric="sqeuclidean")
+    except:
+        unsupervised_score_silhouette = -2       
+    n_clus = len(set(labels_clustered))
+    print('No. of clusters = ',n_clus)
+
+    clusterwise_indices = get_cluster_wise_indices(n_clus,labels_clustered)
+    clusterwise_indices_str = [(set([str(ind+index_start) for ind in arr]),1) for arr in clusterwise_indices] 
+    #print(clusterwise_indices_str)
+    
+    return n_clus, clusterwise_indices_str,unsupervised_score_silhouette
 
 
 def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_method,out_dir,n_true_clus,gt_names):
@@ -139,8 +191,17 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
     Evaluate predicted clusters against ground truth
     
     Parameters:    
+    clusterwise_indices_start_str (list[tuple(set(string),float)]): List of clusters, each is a tuple of the cluster indices and cluster score (1 by default)
+    gt_lines (list[set(string)]): List of sets of image indices in string format per ground truth cluster
+    n_clus (int): No. of clusters predicted
+    clustering_method (sklearn.cluster._method.METHOD): method is a sckit learn clustering method with parameters, 
+        ex: DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation(), etc   
+    out_dir (string): output directory name for results (will be created if it does not exist)
+    n_true_clus (int): No. of true clusters
+    gt_names (list[string]): List of cluster names for each cluster in gt_lines in the same order
     
     Returns:
+    eval_metrics_dict (dict): Dictionary of evaluation metrics and their values on the predicted set of clusters w.r.t true clusters
 
     '''    
     writeable_clusters = [" ".join(sorted(list(cluster[0]),key = lambda x: int(x)))+"\n" for cluster in clusterwise_indices_start_str]
@@ -158,26 +219,6 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
     eval_metrics_dict["No. of clusters"] = n_clus
         
     return eval_metrics_dict
-
-    
-def cluster_data(data_to_cluster,clustering_method,index_start):
-    '''
-    index_start: 0/1 etc - image labels start name
-    '''
-    clustering = clustering_method.fit(data_to_cluster)
-    labels_clustered = clustering.labels_
-    print(clustering_method)
-    try:
-        unsupervised_score_silhouette = silhouette_score(data_to_cluster, labels_clustered, metric="sqeuclidean")
-    except:
-        unsupervised_score_silhouette = -1        
-    n_clus = len(set(labels_clustered))
-    print('No. of clusters = ',n_clus)
-    clusterwise_indices = get_cluster_wise_indices(n_clus,labels_clustered)
-    clusterwise_indices_str = [(set([str(ind+index_start) for ind in arr]),1) for arr in clusterwise_indices] 
-    #print(clusterwise_indices_str)
-    
-    return n_clus, clusterwise_indices_str,unsupervised_score_silhouette
 
 
 def main():
@@ -203,6 +244,8 @@ def main():
                 os.mkdir('./' + out_dir_emb)
             data_to_cluster = get_image_embedding(data,embedding_method)
             
+            # try PCA before clustering . Set distance threshold based on P c a variance 
+            
             for clustering_method in clustering_methods:
                 out_dir = out_dir_emb + '/'+str(clustering_method)  
                 if not os.path.exists('./' + out_dir):
@@ -221,6 +264,8 @@ def main():
         #results_df.sort_values(by='3 F1 score average',ascending=False,inplace=True)
         if ('MMR F1 score' in eval_metrics_dict):
             results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)
+            
+        # check results stability 
         
         results_df.to_csv('./' + out_dir_orig + '/compiled_results_all_methods_sorted_' + dataset + '.csv')
 
