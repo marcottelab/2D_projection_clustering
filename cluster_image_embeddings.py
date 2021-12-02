@@ -48,21 +48,19 @@ def get_config(dataset='real'):
     return images_file_name,images_true_labels,sep,index_start,out_dir
 
 
-def read_data(images_file_name, images_true_labels, sep):
+def read_clusters(images_true_labels,sep):
     '''
-    Reads MRC data and ground truth labels
+    Reads clustered labels
 
     Parameters:    
-    images_file_name (string): input mrcs file containing stack of images
     images_true_labels (string): true cluster labels in the format: name list_of_image_indices
     sep (string): Separater between name of cluster and its members
 
     Returns:
-    data (numpy.ndarray): Image stack of 2D numpy arrays
     gt_lines (list[set(string)]): List of sets of image indices in string format per ground truth cluster
     gt_names (list[string]): List of cluster names for each cluster in gt_lines in the same order
     
-    '''
+    '''    
     with open(images_true_labels) as f:
         raw_lines = f.readlines()
         list_of_tuples = [line.rstrip().split(sep) for line in raw_lines]
@@ -71,6 +69,26 @@ def read_data(images_file_name, images_true_labels, sep):
         #gt_lines = [set(line.rstrip()[sep:-1].split(', ')) for line in raw_lines]
         # Assuming format is [4,5,23,..]
         gt_lines = [set(line[1].lstrip()[1:-1].split(', ')) for line in list_of_tuples]
+        
+    return gt_lines, gt_names
+
+    
+def read_data(images_file_name, images_true_labels, sep):
+    '''
+    Reads MRC data and ground truth labels
+
+    Parameters:    
+    images_file_name (string): input mrcs file containing stack of images
+    images_true_labels (string): filename of file with true cluster labels in the format: name list_of_image_indices
+    sep (string): Separater between name of cluster and its members
+
+    Returns:
+    data (numpy.ndarray): Image stack of 2D numpy arrays
+    gt_lines (list[set(string)]): List of sets of image indices in string format per ground truth cluster
+    gt_names (list[string]): List of cluster names for each cluster in gt_lines in the same order
+    
+    '''
+    gt_lines, gt_names =  read_clusters(images_true_labels,sep)
     
     mrc = mrcfile.open(images_file_name, mode='r+')
     data = mrc.data
@@ -192,6 +210,21 @@ def cluster_data(data_to_cluster,clustering_method,index_start):
     return n_clus, clusterwise_indices_str,unsupervised_score_silhouette
 
 
+def write_clusters(clusterwise_indices_start_str,clustering_method,out_dir):
+    '''
+    Write predicted clusters to file
+    
+    Parameters:    
+    clusterwise_indices_start_str (list[tuple(set(string),float)]): List of clusters, each is a tuple of the cluster indices and cluster score (1 by default)
+    clustering_method (sklearn.cluster._method.METHOD): method is a sckit learn clustering method with parameters, 
+        ex: DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation(), etc   
+    out_dir (string): output directory name for results (will be created if it does not exist)
+    
+    '''
+    writeable_clusters = [" ".join(sorted(list(cluster[0]),key = lambda x: int(x)))+"\n" for cluster in clusterwise_indices_start_str]
+    with open('./' + out_dir + '/' + str(clustering_method) + '_clusters_found.txt', "w") as fid:
+        fid.writelines(writeable_clusters)    
+        
 def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_method,out_dir,n_true_clus,gt_names):
     '''
     Evaluate predicted clusters against ground truth
@@ -210,29 +243,56 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
     eval_metrics_dict (dict): Dictionary of evaluation metrics and their values on the predicted set of clusters w.r.t true clusters
 
     '''    
-    writeable_clusters = [" ".join(sorted(list(cluster[0]),key = lambda x: int(x)))+"\n" for cluster in clusterwise_indices_start_str]
-    with open('./' + out_dir + '/' + str(clustering_method) + '_clusters_found.txt', "w") as fid:
-        fid.writelines(writeable_clusters)    
-    
+
     out_dir = out_dir + '/evaluation_metrics'
     if not os.path.exists('./' + out_dir):
         os.mkdir('./' + out_dir)
-    eval_metrics_dict = compute_metrics(gt_lines, clusterwise_indices_start_str,'./' + out_dir + '/' + str(clustering_method),len(gt_lines),n_clus,{"eval_p":0.5,"dir_nm":out_dir},str(clustering_method),gt_names)            
+    eval_metrics_dict = compute_metrics(gt_lines, clusterwise_indices_start_str,'./' + out_dir + '/' + str(clustering_method),len(gt_lines),n_clus,{"eval_p":0.5,"dir_nm":out_dir},'',gt_names)            
     with open('./' + out_dir + '/' + str(clustering_method) + '_metrics.txt', "a") as fid:
         print('No. of predicted clusters = ',n_clus, file=fid)  
         print('No. of true clusters = ',n_true_clus, file=fid)          
         
     eval_metrics_dict["No. of clusters"] = n_clus
         
+    if ('MMR F1 score' in eval_metrics_dict) and ('Net F1 score' in eval_metrics_dict) and ('Qi F1 score' in eval_metrics_dict):
+        eval_metrics_dict['3 F1 score average'] = (eval_metrics_dict['MMR F1 score'] + eval_metrics_dict['Net F1 score'] + eval_metrics_dict['Qi F1 score'])/3.0
+
     return eval_metrics_dict
 
+
+def evaluate_SLICEM(gt_lines,gt_names,n_true_clus):
+    '''
+    Evaluate SLICEM clustering on synthetic dataset
+    
+    Parameters:    
+    gt_lines (list[set(string)]): List of sets of image indices in string format per ground truth cluster
+    gt_names (list[string]): List of cluster names for each cluster in gt_lines in the same order    
+    n_true_clus (int): No. of true clusters
+    
+    Returns:
+    eval_metrics_dict (dict): Dictionary of evaluation metrics and their values on the predicted set of clusters w.r.t true clusters
+    
+    '''
+    SLICEM_synthetic_labels_file =  './data/synthetic_dataset/slicem_clustering.txt'
+    sep = '\t'
+    out_dir = 'data/synthetic_dataset'
+    cluster_lines, cluster_numbers =  read_clusters(SLICEM_synthetic_labels_file,sep)
+    n_clus = len(cluster_lines)
+    
+    # Adding score as 1 to satisfy input format for compute_metrics function
+    clusterwise_indices_start_str = [(entry,1) for entry in cluster_lines]
+    
+    eval_metrics_dict = evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,'SLICEM',out_dir,n_true_clus,gt_names)
+    eval_metrics_dict['Silhouette score'] = 'NA'
+    return eval_metrics_dict
 
 def main():
 # Main driver
     embedding_methods = ['alexnet', 'vgg','densenet','resnet-18']
     clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #datasets = ['real','synthetic']
-    datasets = ['real']
+    #datasets = ['real']
+    datasets = ['synthetic']
     
     
     for dataset in datasets:
@@ -262,20 +322,25 @@ def main():
                     os.mkdir('./' + out_dir)
                                  
                 n_clus, clusterwise_indices_str,unsupervised_score_silhouette = cluster_data(data_to_cluster,clustering_method,index_start)
+                write_clusters(clusterwise_indices_str,clustering_method,out_dir)                
                 eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,embedding_method + '_' + str(clustering_method),out_dir,n_true_clusters,gt_names)
-                if ('MMR F1 score' in eval_metrics_dict) and ('Net F1 score' in eval_metrics_dict) and ('Qi F1 score' in eval_metrics_dict):
-                    eval_metrics_dict['3 F1 score average'] = (eval_metrics_dict['MMR F1 score'] + eval_metrics_dict['Net F1 score'] + eval_metrics_dict['Qi F1 score'])/3.0
                 eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
+                print(eval_metrics_dict)
                 if len(results_df) == 0:
                     results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
                 results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' embedding ' +  str(clustering_method) + ' clustering'))
-
+        
+        if dataset == 'synthetic':
+            eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters)
+            results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
+            
         #results_df.sort_values(by='No. of clusters',key=lambda x: abs(x-n_true_clusters),inplace=True)
         #results_df.sort_values(by='3 F1 score average',ascending=False,inplace=True)
         if ('MMR F1 score' in eval_metrics_dict):
             results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)
             
         # check results stability 
+        
         
         results_df.to_csv('./' + out_dir_orig + '/compiled_results_all_methods_sorted_' + dataset + '.csv')
 
