@@ -18,7 +18,7 @@ def test_read_data():
     data, gt_lines, gt_names = read_data('./data/real_dataset/mixture_2D.mrcs',  './data/real_dataset/mixture_classification.txt', '   ')
     assert len(data) == 100, len(data)
     assert np.array(data[0]).shape == (96,96), np.array(data[0]).shape
-    assert gt_names == ['80S', '60S', '40S', 'Apo', 'unk'], gt_names
+    assert gt_names == ['80S', '60S', '40S', 'Apo'], gt_names
     assert len(gt_lines[0]) == 28, len(gt_lines[0])
     
     data, gt_lines, gt_names = read_data('./data/synthetic_dataset/synthetic_2D.mrcs',  './data/synthetic_dataset/synthetic_true_clustering.txt', '\t')

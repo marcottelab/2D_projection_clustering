@@ -82,6 +82,12 @@ def read_data(images_file_name, images_true_labels, sep):
     
     mrc.close()
     
+    # Remove unknown complex for evaluation
+    for i, name in enumerate(gt_names):
+        if name == 'unk':
+            gt_names.pop(i)
+            gt_lines.pop(i)
+
     return data, gt_lines, gt_names
 
 
@@ -225,7 +231,11 @@ def main():
 # Main driver
     embedding_methods = ['alexnet', 'vgg','densenet','resnet-18']
     clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
-    for dataset in ['real','synthetic']:
+    #datasets = ['real','synthetic']
+    datasets = ['real']
+    
+    
+    for dataset in datasets:
         images_file_name,images_true_labels,sep,index_start,out_dir_orig = get_config(dataset)
         
         if not os.path.exists('./' + out_dir_orig):
