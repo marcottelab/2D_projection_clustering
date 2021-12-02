@@ -47,8 +47,8 @@ def test_cluster_data(test_vectors):
     
 def test_evaluate_clusters():
     eval_metrics = evaluate_clusters(clusterwise_indices_start_str=[({'0', '1'}, 1)],gt_lines=[{'0','1'}],n_clus=1,clustering_method=DBSCAN(),out_dir='./',n_true_clus=1,gt_names='8')
-    eval_metrics_true = {'No. of matches in MMR': 1, 'MMR Precision': 1.0, 'MMR Recall': 1.0, 'MMR F1 score': 1.0, 'Net F1 score': 1.0, 'Qi Precision': 1.0, 'Qi Recall': 1.0, 'Qi F1 score': 1.0, 'No. of clusters': 1}
-    assert eval_metrics == eval_metrics_true
+    eval_metrics_true = {'No. of matches in MMR': 1, 'MMR Precision': 1.0, 'MMR Recall': 1.0, 'MMR F1 score': 1.0, 'Net F1 score': 1.0, 'Qi Precision': 1.0, 'Qi Recall': 1.0, 'Qi F1 score': 1.0, 'No. of clusters': 1, '3 F1 score average': 1.0}
+    assert eval_metrics == eval_metrics_true, eval_metrics
     
 
 if __name__ == "__main__":    

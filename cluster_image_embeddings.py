@@ -196,6 +196,7 @@ def cluster_data(data_to_cluster,clustering_method,index_start):
     clustering = clustering_method.fit(data_to_cluster)
     labels_clustered = clustering.labels_
     print(clustering_method)
+    
     try:
         unsupervised_score_silhouette = silhouette_score(data_to_cluster, labels_clustered, metric="sqeuclidean")
     except:
@@ -210,6 +211,50 @@ def cluster_data(data_to_cluster,clustering_method,index_start):
     return n_clus, clusterwise_indices_str,unsupervised_score_silhouette
 
 
+def evaluate_embeddings(vectors, gt_lines, index_start):
+    '''
+    Evaluates embeddings with true cluster labels using different distance measures to find best distance measure to use for clustering
+    Parameters:    
+    vectors (numpy.ndarray): Array of image embeddings     
+    gt_lines (list[set(string)]): List of sets of image indices in string format per ground truth cluster
+    index_start (integer): Index at which images are started being numbered, ex: 0, 1, etc
+    
+    Returns:
+    silhouette_dict (dict): Dictionary of silhouette scores per distance measure    
+    '''
+    
+    # Convert cluster wise labels to index wise cluster labels
+    
+    image_wise_cluster_labels = [-1]*len(vectors)
+    
+    for cluster_ind,cluster in enumerate(gt_lines):
+        for image_ind in cluster:
+            image_wise_cluster_labels[int(image_ind)-index_start] = cluster_ind
+            
+    distance_measures = ['braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine', 'dice', 'euclidean',
+                         'hamming', 'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 
+                         'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule',
+                         'l1', 'l2', 'manhattan']
+    
+    silhouette_dict = dict()
+    best_silhouette = -1
+    for distance in distance_measures:
+        try:
+            unsupervised_score_silhouette = silhouette_score(vectors, image_wise_cluster_labels, metric=distance)
+        except:
+            unsupervised_score_silhouette = -2
+            
+        silhouette_dict[distance] = unsupervised_score_silhouette
+        
+        if unsupervised_score_silhouette >= best_silhouette:
+            best_silhouette = unsupervised_score_silhouette
+            best_distance = distance
+            
+    silhouette_dict['max_silhouette_distance']= best_distance    
+        
+    return silhouette_dict        
+            
+    
 def write_clusters(clusterwise_indices_start_str,clustering_method,out_dir):
     '''
     Write predicted clusters to file
@@ -224,6 +269,7 @@ def write_clusters(clusterwise_indices_start_str,clustering_method,out_dir):
     writeable_clusters = [" ".join(sorted(list(cluster[0]),key = lambda x: int(x)))+"\n" for cluster in clusterwise_indices_start_str]
     with open('./' + out_dir + '/' + str(clustering_method) + '_clusters_found.txt', "w") as fid:
         fid.writelines(writeable_clusters)    
+        
         
 def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_method,out_dir,n_true_clus,gt_names):
     '''
@@ -241,7 +287,6 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
     
     Returns:
     eval_metrics_dict (dict): Dictionary of evaluation metrics and their values on the predicted set of clusters w.r.t true clusters
-
     '''    
 
     out_dir = out_dir + '/evaluation_metrics'
@@ -260,7 +305,7 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
     return eval_metrics_dict
 
 
-def evaluate_SLICEM(gt_lines,gt_names,n_true_clus):
+def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start):
     '''
     Evaluate SLICEM clustering on synthetic dataset
     
@@ -273,12 +318,17 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus):
     eval_metrics_dict (dict): Dictionary of evaluation metrics and their values on the predicted set of clusters w.r.t true clusters
     
     '''
-    SLICEM_synthetic_labels_file =  './data/synthetic_dataset/slicem_clustering.txt'
-    sep = '\t'
-    out_dir = 'data/synthetic_dataset'
-    cluster_lines, cluster_numbers =  read_clusters(SLICEM_synthetic_labels_file,sep)
+    if dataset == 'synthetic':
+        out_dir = 'data/synthetic_dataset'        
+    else: # real 
+        out_dir = 'data/real_dataset'     
+
+    SLICEM_labels_file =  './' + out_dir + '/slicem_clustering.txt'
+
+    cluster_lines, cluster_numbers =  read_clusters(SLICEM_labels_file,sep)
     n_clus = len(cluster_lines)
     
+    cluster_lines = [set([str(int(img_ind) + index_start) for img_ind in entry]) for entry in cluster_lines]
     # Adding score as 1 to satisfy input format for compute_metrics function
     clusterwise_indices_start_str = [(entry,1) for entry in cluster_lines]
     
@@ -286,14 +336,14 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus):
     eval_metrics_dict['Silhouette score'] = 'NA'
     return eval_metrics_dict
 
+
 def main():
 # Main driver
     embedding_methods = ['alexnet', 'vgg','densenet','resnet-18']
     clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
-    #datasets = ['real','synthetic']
+    datasets = ['real','synthetic']
     #datasets = ['real']
-    datasets = ['synthetic']
-    
+    #datasets = ['synthetic']
     
     for dataset in datasets:
         images_file_name,images_true_labels,sep,index_start,out_dir_orig = get_config(dataset)
@@ -307,12 +357,19 @@ def main():
         #data_to_cluster = data.flatten().reshape(100,96*96)  # Just flattened data: Check if correct
         
         results_df = pd.DataFrame()
+        embedding_eval_df = pd.DataFrame()
         
         for embedding_method in embedding_methods:
             out_dir_emb = out_dir_orig + '/'+embedding_method
             if not os.path.exists('./' + out_dir_emb):
                 os.mkdir('./' + out_dir_emb)
             data_to_cluster = get_image_embedding(data,embedding_method)
+            
+            silhouette_dict = evaluate_embeddings(data_to_cluster, gt_lines, index_start)
+            if len(embedding_eval_df) == 0:
+                embedding_eval_df = pd.DataFrame(columns = silhouette_dict.keys())    
+                
+            embedding_eval_df = embedding_eval_df.append(pd.Series(silhouette_dict,name = embedding_method))
             
             # try PCA before clustering . Set distance threshold based on P c a variance 
             
@@ -325,14 +382,12 @@ def main():
                 write_clusters(clusterwise_indices_str,clustering_method,out_dir)                
                 eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,embedding_method + '_' + str(clustering_method),out_dir,n_true_clusters,gt_names)
                 eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
-                print(eval_metrics_dict)
                 if len(results_df) == 0:
                     results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
                 results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' embedding ' +  str(clustering_method) + ' clustering'))
         
-        if dataset == 'synthetic':
-            eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters)
-            results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
+        eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
+        results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
             
         #results_df.sort_values(by='No. of clusters',key=lambda x: abs(x-n_true_clusters),inplace=True)
         #results_df.sort_values(by='3 F1 score average',ascending=False,inplace=True)
@@ -341,6 +396,7 @@ def main():
             
         # check results stability 
         
+        embedding_eval_df.to_csv('./' + out_dir_orig + '/evaluating_embeddings_' + dataset + '.csv')
         
         results_df.to_csv('./' + out_dir_orig + '/compiled_results_all_methods_sorted_' + dataset + '.csv')
 
