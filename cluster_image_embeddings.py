@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import random
 
 
 def get_config(dataset='real'):
@@ -175,7 +176,7 @@ def get_cluster_wise_indices(n_clus,labels_clustered):
     return clusterwise_indices
 
 
-def cluster_data(data_to_cluster,clustering_method,index_start):
+def cluster_data(data_to_cluster,clustering_method,index_start, dist_metric = ''):
     '''
     Cluster vectors of image embeddings 
     
@@ -193,10 +194,19 @@ def cluster_data(data_to_cluster,clustering_method,index_start):
         -2 if only one cluster or can't be otherwise computed
     '''
     
+    # Setting parameters
     if clustering_method == MeanShift():
         bandwidth = estimate_bandwidth(data_to_cluster)
         clustering_method = MeanShift(bandwidth = bandwidth)
         
+    if len(dist_metric):
+        logger.info("Setting best distance measure - {}", dist_metric)
+        if clustering_method == DBSCAN():
+            clustering_method = DBSCAN(metric = dist_metric)
+        elif clustering_method == OPTICS():
+            clustering_method = OPTICS(metric = dist_metric)
+        
+    # Clustering
     clustering = clustering_method.fit(data_to_cluster)
     labels_clustered = clustering.labels_
     logger.info(clustering_method)
@@ -235,6 +245,65 @@ def get_image_wise_cluster_labels(vectors,gt_lines,index_start):
             
     return image_wise_cluster_labels
 
+
+def myfun():
+    '''
+    Returns a constant number, useful to set constant random state
+    '''
+    return 0.42
+
+def get_train_images(image_wise_cluster_labels,train_cluster_inds,vectors):
+    
+    train_image_wise_cluster_labels = []
+    test_image_wise_cluster_labels = []
+    train_vectors = []
+    test_vectors = []
+    
+    for image_ind,cluster_ind in enumerate(image_wise_cluster_labels):
+        if cluster_ind in train_cluster_inds:
+            train_image_wise_cluster_labels.append(cluster_ind)
+            train_vectors.append(vectors[image_ind])
+        else:
+            test_image_wise_cluster_labels.append(cluster_ind)
+            test_vectors.append(vectors[image_ind])
+            
+    return train_image_wise_cluster_labels, train_vectors, test_image_wise_cluster_labels, test_vectors
+            
+            
+def train_test_split_complexes(gt_lines,train_percentage=0.7):
+    '''
+    Splits complexes into train and test sets
+    Parameters:        
+    gt_lines (list[set(string)]): List of sets of image indices in string format per ground truth cluster    
+    train_percentage (int): % of complexes to be in train set
+    
+    Returns:
+    train_cluster_inds (list[int]): List of indices of original ground truth list corresponding to train complexes
+    test_cluster_inds (list[int]): List of indices of original ground truth list corresponding to test complexes
+    
+    train_clusters (list[set(string)]): List of sets of image indices in string format per ground truth training cluster 
+    test_clusters (list[set(string)]): List of sets of image indices in string format per ground truth test cluster 
+    
+    '''
+    n_true_clus = len(gt_lines)
+    inds = list(range(0,n_true_clus)) # Note: Indices start from 0 here
+    random.shuffle(inds, myfun)
+    
+    train_last_ind = int(train_percentage*n_true_clus)
+    
+    train_cluster_inds = inds[:train_last_ind]
+    test_cluster_inds = inds[train_last_ind+1:]
+    
+    train_clusters = []
+    test_clusters = []
+    for i, cluster in enumerate(gt_lines):
+        if i in train_cluster_inds:
+            train_clusters.append(cluster)
+        else:
+            test_clusters.append(cluster)
+    
+    return train_cluster_inds, test_cluster_inds, train_clusters, test_clusters
+    
             
 def evaluate_embeddings(vectors, image_wise_cluster_labels):
     '''
@@ -382,8 +451,16 @@ def reduce_dimensions(vectors, n_dims = 50):
     return vectors_reduced
     
 
-def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels):
-    method = manifold.TSNE(n_components=2, init="pca", random_state=0)
+def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 'euclidean'):
+    '''
+    Plots TSNE on all data using the specified metric
+    Parameters:    
+    vectors_reduced (numpy.ndarray): Reduced dimensional Array of image embeddings   
+    image_wise_true_labels (list[int]): List of cluster numbers per image
+
+    
+    '''
+    method = manifold.TSNE(n_components=2, init="pca", random_state=0, metric = dist_metric)
     
     Y = method.fit_transform(vectors_reduced)
     plt.figure(figsize=(15, 8))
@@ -394,7 +471,7 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels):
     
 def main():
 # Main driver
-    embedding_methods = ['alexnet', 'vgg','densenet','resnet-18']
+    embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
     clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #datasets = ['real','synthetic']
     #datasets = ['real']
@@ -423,19 +500,32 @@ def main():
             if not os.path.exists('./' + out_dir_emb):
                 os.mkdir('./' + out_dir_emb)
             data_to_cluster = get_image_embedding(data,embedding_method)
+            
             data_to_cluster = reduce_dimensions(data_to_cluster)
             
             image_wise_cluster_labels = get_image_wise_cluster_labels(data_to_cluster,gt_lines,index_start)
-            # Plot TSNEs
-            plot_tsne(data_to_cluster,out_dir_emb,image_wise_cluster_labels)            
-            silhouette_dict = evaluate_embeddings(data_to_cluster, image_wise_cluster_labels)
+            
+            # Split into train and test sets
+            train_cluster_inds, test_cluster_inds, train_clusters, test_clusters = train_test_split_complexes(gt_lines)
+            train_image_wise_cluster_labels, train_vectors, test_image_wise_cluster_labels, test_vectors = get_train_images(image_wise_cluster_labels,train_cluster_inds,data_to_cluster)
+            
+            silhouette_dict_full = evaluate_embeddings(data_to_cluster, image_wise_cluster_labels)
+            
+            silhouette_dict = evaluate_embeddings(train_vectors, train_image_wise_cluster_labels)
             
             if len(embedding_eval_df) == 0:
                 embedding_eval_df = pd.DataFrame(columns = silhouette_dict.keys())    
                 
-            embedding_eval_df = embedding_eval_df.append(pd.Series(silhouette_dict,name = embedding_method))
+            embedding_eval_df = embedding_eval_df.append(pd.Series(silhouette_dict,name = embedding_method + ' with train data'))
+            embedding_eval_df = embedding_eval_df.append(pd.Series(silhouette_dict_full,name = embedding_method + ' with full data'))
+
+            # Plot TSNEs
+            try:
+                plot_tsne(data_to_cluster,out_dir_emb,image_wise_cluster_labels, silhouette_dict['max_silhouette_distance'] )                
+            except: # Add traceback
+                logger.error('ERROR in tsne plot')
             
-            # try PCA before clustering . Set distance threshold based on P c a variance 
+            # Set distance threshold based on PCA variance 
             
             for clustering_method in clustering_methods:
                 out_dir = out_dir_emb + '/'+str(clustering_method)  
@@ -449,7 +539,6 @@ def main():
                 if len(results_df) == 0:
                     results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
                 results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' embedding ' +  str(clustering_method) + ' clustering'))
-
         
         eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
         results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
