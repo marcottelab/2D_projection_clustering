@@ -205,6 +205,8 @@ def cluster_data(data_to_cluster,clustering_method,index_start, dist_metric = ''
             clustering_method = DBSCAN(metric = dist_metric)
         elif clustering_method == OPTICS():
             clustering_method = OPTICS(metric = dist_metric)
+    else:
+        dist_metric = "sqeuclidean"
         
     # Clustering
     clustering = clustering_method.fit(data_to_cluster)
@@ -212,7 +214,7 @@ def cluster_data(data_to_cluster,clustering_method,index_start, dist_metric = ''
     logger.info(clustering_method)
     
     try:
-        unsupervised_score_silhouette = silhouette_score(data_to_cluster, labels_clustered, metric="sqeuclidean")
+        unsupervised_score_silhouette = silhouette_score(data_to_cluster, labels_clustered, metric=dist_metric)
     except:
         unsupervised_score_silhouette = -2       
     n_clus = len(set(labels_clustered))
@@ -253,7 +255,20 @@ def myfun():
     return 0.42
 
 def get_train_images(image_wise_cluster_labels,train_cluster_inds,vectors):
+    '''
+    Splits images into train and test sets based on train and test clusters, and provides corresponding cluster labels for each image in the train and teset set
+    Parameters:
+    image_wise_cluster_labels (list[int]): List of cluster numbers per image        
+    train_cluster_inds (list[int]): List of indices of original ground truth list corresponding to train complexes
+    vectors (numpy.ndarray): Array of image embeddings     
+        
+    Returns:
+    train_image_wise_cluster_labels (list[int]): List of cluster numbers per train image  
+    train_vectors (list[numpy.array]): Train image embeddings
+    test_image_wise_cluster_labels (list[int]): List of cluster numbers per test image  
+    test_vectors (list[numpy.array]): Test image embeddings
     
+    '''
     train_image_wise_cluster_labels = []
     test_image_wise_cluster_labels = []
     train_vectors = []
@@ -457,8 +472,8 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 
     Parameters:    
     vectors_reduced (numpy.ndarray): Reduced dimensional Array of image embeddings   
     image_wise_true_labels (list[int]): List of cluster numbers per image
+    dist_metric (string): Pairwise distance metric
 
-    
     '''
     method = manifold.TSNE(n_components=2, init="pca", random_state=0, metric = dist_metric)
     
@@ -473,9 +488,9 @@ def main():
 # Main driver
     embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
     clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
-    #datasets = ['real','synthetic']
+    datasets = ['real','synthetic']
     #datasets = ['real']
-    datasets = ['synthetic']  
+    #datasets = ['synthetic']  
     
     for dataset in datasets:
         images_file_name,images_true_labels,sep,index_start,out_dir_orig = get_config(dataset)
