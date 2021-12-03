@@ -11,10 +11,14 @@ from sklearn.metrics import silhouette_score
 from img2vec_pytorch import Img2Vec
 from PIL import Image
 from matplotlib import cm
+from sklearn.decomposition import PCA, TruncatedSVD
+from loguru import logger
+from sklearn import manifold
 import mrcfile
 import numpy as np
 import pandas as pd
 import os
+import matplotlib.pyplot as plt
 
 
 def get_config(dataset='real'):
@@ -93,10 +97,10 @@ def read_data(images_file_name, images_true_labels, sep):
     mrc = mrcfile.open(images_file_name, mode='r+')
     data = mrc.data
     
-    print('Length of data= ', len(data))
+    logger.info("Length of data= {}", len(data))
     
     arr_tmp = np.array(data[0])
-    print('Image array dimensions= ', arr_tmp.shape)
+    logger.info('Image array dimensions= {}', arr_tmp.shape)
     
     mrc.close()
     
@@ -195,14 +199,14 @@ def cluster_data(data_to_cluster,clustering_method,index_start):
         
     clustering = clustering_method.fit(data_to_cluster)
     labels_clustered = clustering.labels_
-    print(clustering_method)
+    logger.info(clustering_method)
     
     try:
         unsupervised_score_silhouette = silhouette_score(data_to_cluster, labels_clustered, metric="sqeuclidean")
     except:
         unsupervised_score_silhouette = -2       
     n_clus = len(set(labels_clustered))
-    print('No. of clusters = ',n_clus)
+    logger.info('No. of clusters = {}', n_clus)
 
     clusterwise_indices = get_cluster_wise_indices(n_clus,labels_clustered)
     clusterwise_indices_str = [(set([str(ind+index_start) for ind in arr]),1) for arr in clusterwise_indices] 
@@ -211,25 +215,37 @@ def cluster_data(data_to_cluster,clustering_method,index_start):
     return n_clus, clusterwise_indices_str,unsupervised_score_silhouette
 
 
-def evaluate_embeddings(vectors, gt_lines, index_start):
+def get_image_wise_cluster_labels(vectors,gt_lines,index_start):
     '''
-    Evaluates embeddings with true cluster labels using different distance measures to find best distance measure to use for clustering
+    Convert cluster wise labels to index wise cluster labels
     Parameters:    
     vectors (numpy.ndarray): Array of image embeddings     
     gt_lines (list[set(string)]): List of sets of image indices in string format per ground truth cluster
     index_start (integer): Index at which images are started being numbered, ex: 0, 1, etc
-    
+
     Returns:
-    silhouette_dict (dict): Dictionary of silhouette scores per distance measure    
+    image_wise_cluster_labels (list[int]): List of cluster numbers per image
     '''
-    
-    # Convert cluster wise labels to index wise cluster labels
     
     image_wise_cluster_labels = [-1]*len(vectors)
     
     for cluster_ind,cluster in enumerate(gt_lines):
         for image_ind in cluster:
             image_wise_cluster_labels[int(image_ind)-index_start] = cluster_ind
+            
+    return image_wise_cluster_labels
+
+            
+def evaluate_embeddings(vectors, image_wise_cluster_labels):
+    '''
+    Evaluates embeddings with true cluster labels using different distance measures to find best distance measure to use for clustering
+    Parameters:    
+    vectors (numpy.ndarray): Array of image embeddings     
+    image_wise_cluster_labels (list[int]): List of cluster numbers per image
+    
+    Returns:
+    silhouette_dict (dict): Dictionary of silhouette scores per distance measure    
+    '''
             
     distance_measures = ['braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine', 'dice', 'euclidean',
                          'hamming', 'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 
@@ -337,19 +353,61 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start):
     return eval_metrics_dict
 
 
+def reduce_dimensions(vectors, n_dims = 50):
+    '''
+    Reduce dimensions with PCA or truncated SVD (for sparse embeddings)
+    Parameters:    
+    vectors (numpy.ndarray): Array of image embeddings 
+
+    Returns:
+    vectors_reduced (numpy.ndarray): Reduced dimensional Array of image embeddings   
+    '''
+    
+    # Calculate sparsity
+    logger.info('Total elements in vectors = {}', float(vectors.size))
+    sparsity = 1.0 - ( np.count_nonzero(vectors) / float(vectors.size) )
+    logger.info('Sparsity of original embeddings = {}', sparsity)
+        
+    if sparsity > 0.5:
+        method = TruncatedSVD(n_components=n_dims)       
+    else:
+        method = PCA(n_components=n_dims)
+        
+    vectors_reduced = method.fit_transform(vectors) 
+    variance_captured = sum(method.explained_variance_ratio_)         
+        
+    logger.info('Reduced dimensions: {}', vectors_reduced[0].shape)
+    logger.info('Variance captured: {}', variance_captured)
+    
+    return vectors_reduced
+    
+
+def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels):
+    method = manifold.TSNE(n_components=2, init="pca", random_state=0)
+    
+    Y = method.fit_transform(vectors_reduced)
+    plt.figure(figsize=(15, 8))
+    plt.scatter(Y[:, 0], Y[:, 1], c = image_wise_true_labels, cmap='viridis')
+    plt.axis("tight")
+    plt.savefig('./' + out_dir_emb + '/embedding_tsne.jpg')
+    
+    
 def main():
 # Main driver
     embedding_methods = ['alexnet', 'vgg','densenet','resnet-18']
     clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
-    datasets = ['real','synthetic']
+    #datasets = ['real','synthetic']
     #datasets = ['real']
-    #datasets = ['synthetic']
+    datasets = ['synthetic']  
     
     for dataset in datasets:
         images_file_name,images_true_labels,sep,index_start,out_dir_orig = get_config(dataset)
         
         if not os.path.exists('./' + out_dir_orig):
             os.mkdir('./' + out_dir_orig)
+            
+        # Setting logger
+        logger.add('./' + out_dir_orig + '/log_file.txt',level="INFO")
             
         data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep)
         n_true_clusters = len(gt_lines)
@@ -360,12 +418,18 @@ def main():
         embedding_eval_df = pd.DataFrame()
         
         for embedding_method in embedding_methods:
+            logger.info(embedding_method)
             out_dir_emb = out_dir_orig + '/'+embedding_method
             if not os.path.exists('./' + out_dir_emb):
                 os.mkdir('./' + out_dir_emb)
             data_to_cluster = get_image_embedding(data,embedding_method)
+            data_to_cluster = reduce_dimensions(data_to_cluster)
             
-            silhouette_dict = evaluate_embeddings(data_to_cluster, gt_lines, index_start)
+            image_wise_cluster_labels = get_image_wise_cluster_labels(data_to_cluster,gt_lines,index_start)
+            # Plot TSNEs
+            plot_tsne(data_to_cluster,out_dir_emb,image_wise_cluster_labels)            
+            silhouette_dict = evaluate_embeddings(data_to_cluster, image_wise_cluster_labels)
+            
             if len(embedding_eval_df) == 0:
                 embedding_eval_df = pd.DataFrame(columns = silhouette_dict.keys())    
                 
@@ -385,6 +449,7 @@ def main():
                 if len(results_df) == 0:
                     results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
                 results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' embedding ' +  str(clustering_method) + ' clustering'))
+
         
         eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
         results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
