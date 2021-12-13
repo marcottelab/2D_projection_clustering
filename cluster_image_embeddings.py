@@ -14,6 +14,7 @@ from matplotlib import cm
 from sklearn.decomposition import PCA, TruncatedSVD
 from loguru import logger
 from sklearn import manifold
+from siamese_embedding import siamese_embedding
 import mrcfile
 import numpy as np
 import pandas as pd
@@ -125,9 +126,7 @@ def get_image_embedding(data,embedding_model = 'resnet-18'):
     Returns:
     vectors (numpy.ndarray): Array of image embeddings 
     '''
-    # Initialize Img2Vec
-    img2vec = Img2Vec(model=embedding_model) 
-    
+
     data_nonneg = []
     for myarray in data:
         myarray[myarray <= 0] = 0
@@ -148,8 +147,16 @@ def get_image_embedding(data,embedding_model = 'resnet-18'):
     #list_of_PIL_imgs = [Image.fromarray(myarray,'L') for myarray in data] 
     #list_of_PIL_imgs = [Image.fromarray(myarray,'RGB') for myarray in data] 
     
-    vectors = img2vec.get_vec(list_of_PIL_imgs)
-    
+    # Initialize Img2Vec
+    if embedding_model in ['alexnet', 'vgg','densenet','resnet-18']:
+        img2vec = Img2Vec(model=embedding_model)     
+        vectors = img2vec.get_vec(list_of_PIL_imgs)
+    elif embedding_model == 'siamese':
+        vectors = siamese_embedding(list_of_PIL_imgs)
+    else:
+        logger.error('Embedding model not found. Returning flattened images')
+        vectors = data.flatten().reshape(100,96*96)  # Just flattened data: Check if correct
+
     return vectors
 
 
@@ -486,11 +493,12 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 
     
 def main():
 # Main driver
-    embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
+    embedding_methods = ['siamese']
+    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
     clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
-    datasets = ['real','synthetic']
+    #datasets = ['real','synthetic']
     #datasets = ['real']
-    #datasets = ['synthetic']  
+    datasets = ['synthetic']  
     
     for dataset in datasets:
         images_file_name,images_true_labels,sep,index_start,out_dir_orig = get_config(dataset)
@@ -503,9 +511,7 @@ def main():
             
         data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep)
         n_true_clusters = len(gt_lines)
-        
-        #data_to_cluster = data.flatten().reshape(100,96*96)  # Just flattened data: Check if correct
-        
+                
         results_df = pd.DataFrame()
         embedding_eval_df = pd.DataFrame()
         
