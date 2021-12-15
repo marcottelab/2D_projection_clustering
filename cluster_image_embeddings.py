@@ -7,7 +7,7 @@ Created on Wed Oct 20 13:43:45 2021
 
 from eval_complex import compute_metrics
 from sklearn.cluster import DBSCAN,AffinityPropagation,MeanShift,OPTICS,Birch, estimate_bandwidth
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from img2vec_pytorch import Img2Vec
 from PIL import Image
 from matplotlib import cm
@@ -199,6 +199,10 @@ def cluster_data(data_to_cluster,clustering_method,index_start, dist_metric = ''
         ex: [({'0', '1'}, 1)]
     unsupervised_score_silhouette (float): Silhouette score for the clustering, range between [-1,1]. Higher score implies better separability of clusters,
         -2 if only one cluster or can't be otherwise computed
+    unsupervised_score_calinski_harabasz (float): Calinski-Harabasz index also known as the Variance Ratio Criterion - can be used to evaluate the model, where a higher Calinski-Harabasz score relates to a model with better defined clusters
+        -2 if only one cluster or can't be otherwise computed
+    unsupervised_score_davies_bouldin (float): Davies-Bouldin index - Zero is the lowest possible score. Values closer to zero indicate a better partition, 
+        -2 if only one cluster or can't be otherwise computed
     '''
     
     # Setting parameters
@@ -223,7 +227,18 @@ def cluster_data(data_to_cluster,clustering_method,index_start, dist_metric = ''
     try:
         unsupervised_score_silhouette = silhouette_score(data_to_cluster, labels_clustered, metric=dist_metric)
     except:
-        unsupervised_score_silhouette = -2       
+        unsupervised_score_silhouette = -2 
+        
+    try:
+        unsupervised_score_calinski_harabasz = calinski_harabasz_score(data_to_cluster, labels_clustered)
+    except:
+        unsupervised_score_calinski_harabasz = -2 
+        
+    try:
+        unsupervised_score_davies_bouldin = davies_bouldin_score(data_to_cluster, labels_clustered)
+    except:
+        unsupervised_score_davies_bouldin = -2         
+        
     n_clus = len(set(labels_clustered))
     logger.info('No. of clusters = {}', n_clus)
 
@@ -231,7 +246,7 @@ def cluster_data(data_to_cluster,clustering_method,index_start, dist_metric = ''
     clusterwise_indices_str = [(set([str(ind+index_start) for ind in arr]),1) for arr in clusterwise_indices] 
     #print(clusterwise_indices_str)
     
-    return n_clus, clusterwise_indices_str,unsupervised_score_silhouette
+    return n_clus, clusterwise_indices_str,unsupervised_score_silhouette, unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin
 
 
 def get_image_wise_cluster_labels(vectors,gt_lines,index_start):
@@ -460,13 +475,37 @@ def reduce_dimensions(vectors, n_dims = 50):
     logger.info('Sparsity of original embeddings = {}', sparsity)
         
     if sparsity > 0.5:
+        logger.info('Performing Truncated SVD...')
         method = TruncatedSVD(n_components=n_dims)       
     else:
+        logger.info('Performing PCA...')        
         method = PCA(n_components=n_dims)
         
-    vectors_reduced = method.fit_transform(vectors) 
-    variance_captured = sum(method.explained_variance_ratio_)         
+    method.fit(vectors)        
+    variance_per_component = method.explained_variance_ratio_
+    logger.info('Variance per component {}', variance_per_component)
+    
+    # Remove dimensions contributing lesser than 2% variance
+    
+    min_contribution = 0.02
+    n_imp_dims = 0
+    for var in variance_per_component:
+        if var > min_contribution:
+            n_imp_dims += 1
+        else:
+            break
         
+    if sparsity > 0.5:
+        logger.info('Performing Truncated SVD...')
+        method = TruncatedSVD(n_components=n_imp_dims)       
+    else:
+        logger.info('Performing PCA...')        
+        method = PCA(n_components=n_imp_dims)    
+    
+    vectors_reduced = method.fit_transform(vectors)     
+    variance_per_component = method.explained_variance_ratio_    
+    variance_captured = sum(variance_per_component)           
+      
     logger.info('Reduced dimensions: {}', vectors_reduced[0].shape)
     logger.info('Variance captured: {}', variance_captured)
     
@@ -493,12 +532,18 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 
     
 def main():
 # Main driver
-    embedding_methods = ['siamese']
+    #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
+    embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
     clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #datasets = ['real','synthetic']
     #datasets = ['real']
     datasets = ['synthetic']  
+    
+    # Hyper-parameter ranges for cross-validation
+    # cluster_hyper_param_ranges = {"DBSCAN": {"eps":np.arange(0.1,1,0.1)}
+    #                               }
+    
     
     for dataset in datasets:
         images_file_name,images_true_labels,sep,index_start,out_dir_orig = get_config(dataset)
@@ -546,17 +591,24 @@ def main():
             except: # Add traceback
                 logger.error('ERROR in tsne plot')
             
-            # Set distance threshold based on PCA variance 
+            # Set distance threshold based on PCA variance
+            
+            # Training clustering hyper parameters using training data
+            
+            
             
             for clustering_method in clustering_methods:
                 out_dir = out_dir_emb + '/'+str(clustering_method)  
                 if not os.path.exists('./' + out_dir):
                     os.mkdir('./' + out_dir)
                                  
-                n_clus, clusterwise_indices_str,unsupervised_score_silhouette = cluster_data(data_to_cluster,clustering_method,index_start)
+                n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(data_to_cluster,clustering_method,index_start)
                 write_clusters(clusterwise_indices_str,clustering_method,out_dir)                
                 eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,embedding_method + '_' + str(clustering_method),out_dir,n_true_clusters,gt_names)
                 eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
+                eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
+                eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin
+                
                 if len(results_df) == 0:
                     results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
                 results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' embedding ' +  str(clustering_method) + ' clustering'))
