@@ -45,13 +45,13 @@ def get_config(dataset='real'):
         images_true_labels = './data/real_dataset/mixture_classification.txt'
         sep ='   '
         index_start = 1
-        out_dir = 'results_real_dataset'
+        out_dir = 'results_real_data'
     else: # synthetic
         images_file_name = './data/synthetic_dataset/synthetic_2D.mrcs' 
         images_true_labels = './data/synthetic_dataset/synthetic_true_clustering.txt'
         sep = '\t'
         index_start = 0
-        out_dir = 'results_synthetic_dataset'
+        out_dir = 'results_synthetic_data'
         
     return images_file_name,images_true_labels,sep,index_start,out_dir
 
@@ -410,7 +410,7 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
     eval_metrics_dict (dict): Dictionary of evaluation metrics and their values on the predicted set of clusters w.r.t true clusters
     '''    
 
-    out_dir = out_dir + '/evaluation_metrics'
+    out_dir = out_dir + '/evaluate'
     if not os.path.exists('./' + out_dir):
         os.mkdir('./' + out_dir)
     eval_metrics_dict = compute_metrics(gt_lines, clusterwise_indices_start_str,'./' + out_dir + '/' + str(clustering_method),len(gt_lines),n_clus,{"eval_p":0.5,"dir_nm":out_dir},'',gt_names)            
@@ -600,7 +600,7 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
     '''
     results_df = pd.DataFrame()
     for method, param_grid in cluster_hyper_param_ranges.items():
-        logger.info(list(make_generator(param_grid)))
+        logger.debug(list(make_generator(param_grid)))
         for params in make_generator(param_grid):
                 
             if method == "DBSCAN":
@@ -629,16 +629,17 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
                     value = round(value,2)
                 except:
                     value = value
-                cluster_method_str = cluster_method_str + param + '_' + str(value)
+                if param is not "metric":
+                    cluster_method_str = cluster_method_str + param + '_' + str(value)
                     
-            out_dir = out_dir_emb + '/parameter_selection'  
+            out_dir = out_dir_emb + '/tuning'  
             if not os.path.exists('./' + out_dir):
                 os.mkdir('./' + out_dir)
             out_dir = out_dir + '/'+cluster_method_str  
             if not os.path.exists('./' + out_dir):
                 os.mkdir('./' + out_dir) 
             try: # warm start
-                with open('./' + out_dir + '/evaluation_metrics/eval_metrics_dict.pkl','rb') as f:
+                with open('./' + out_dir + '/eval_metrics_dict.pkl','rb') as f:
                     eval_metrics_dict = pkl.load(f)           
             except:
                 n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(data_to_cluster,ca,index_start)
@@ -648,7 +649,7 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
                 eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin
                 eval_metrics_dict['clustering method'] = ca
                 # Save to file and use for warm start
-                with open('./' + out_dir + '/evaluation_metrics/eval_metrics_dict.pkl','wb') as f:
+                with open('./' + out_dir + '/eval_metrics_dict.pkl','wb') as f:
                     pkl.dump(eval_metrics_dict,f)
             if len(results_df) == 0:
                 results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
@@ -711,6 +712,8 @@ def main():
         n_true_clusters = len(gt_lines)
                 
         results_df = pd.DataFrame()
+        test_results_df = pd.DataFrame()
+        
         embedding_eval_df = pd.DataFrame()
         
         for embedding_method in embedding_methods:
@@ -769,6 +772,7 @@ def main():
                 n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(data_to_cluster,clustering_method,index_start,silhouette_dict['max_silhouette_distance'])
                 write_clusters(clusterwise_indices_str,'',out_dir)                
                 
+                # On full data
                 eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,'',out_dir,n_true_clusters,gt_names)
                 eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
                 eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
@@ -777,6 +781,18 @@ def main():
                 if len(results_df) == 0:
                     results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
                 results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' embedding ' +  str(clustering_method) + ' clustering'))
+                
+                # On test data
+                test_eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,'test',out_dir,n_true_clusters,gt_names)
+                test_eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
+                test_eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
+                test_eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin
+                
+                if len(results_df) == 0:
+                    test_results_df = pd.DataFrame(columns = test_eval_metrics_dict.keys())
+                test_results_df = test_results_df.append(pd.Series(test_eval_metrics_dict,name = embedding_method + ' embedding ' +  str(clustering_method) + ' clustering'))
+
+                
         
         eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
         results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
@@ -786,9 +802,14 @@ def main():
         if ('MMR F1 score' in eval_metrics_dict):
             results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)
             
+        if ('MMR F1 score' in test_eval_metrics_dict):
+            test_results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)            
+            
         # check results stability 
         
         embedding_eval_df.to_csv('./' + out_dir_orig + '/evaluating_embeddings_' + dataset + '.csv')
+        
+        test_results_df.to_csv('./' + out_dir_orig + '/compiled_test_results_all_methods_sorted_' + dataset + '.csv')
         
         results_df.to_csv('./' + out_dir_orig + '/compiled_results_all_methods_sorted_' + dataset + '.csv')
 
