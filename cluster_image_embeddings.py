@@ -15,12 +15,14 @@ from sklearn.decomposition import PCA, TruncatedSVD
 from loguru import logger
 from sklearn import manifold
 from siamese_embedding import siamese_embedding
+#from clusteval import clusteval
 import mrcfile
 import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import random
+import pickle as pkl
 
 
 def get_config(dataset='real'):
@@ -206,9 +208,6 @@ def cluster_data(data_to_cluster,clustering_method,index_start, dist_metric = ''
     '''
     
     # Setting parameters
-    if clustering_method == MeanShift():
-        bandwidth = estimate_bandwidth(data_to_cluster)
-        clustering_method = MeanShift(bandwidth = bandwidth)
         
     if len(dist_metric):
         logger.info("Setting best distance measure - {}", dist_metric)
@@ -216,8 +215,8 @@ def cluster_data(data_to_cluster,clustering_method,index_start, dist_metric = ''
             clustering_method = DBSCAN(metric = dist_metric)
         elif clustering_method == OPTICS():
             clustering_method = OPTICS(metric = dist_metric)
-    else:
-        dist_metric = "sqeuclidean"
+    # else:
+    #     dist_metric = "sqeuclidean"
         
     # Clustering
     clustering = clustering_method.fit(data_to_cluster)
@@ -529,20 +528,174 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 
     plt.axis("tight")
     plt.savefig('./' + out_dir_emb + '/embedding_tsne.jpg')
     
+
+# def cluster_hyperparameter_optimization_clusteval(data_to_cluster,clustering_method):
+#     ce = clusteval(cluster='dbscan')
+
+#     # Fit to find optimal number of clusters using dbscan
+#     results= ce.fit(data_to_cluster)
     
+#     # Make plot of the cluster evaluation
+#     ce.plot()
+    
+#     # Make scatter plot. Note that the first two coordinates are used for plotting.
+#     ce.scatter(data_to_cluster)
+    
+#     # results is a dict with various output statistics. One of them are the labels.
+#     cluster_labels = results['labx']
+    
+#     print(cluster_labels)
+#     # Giving error with silhouette score not defined when each individual is a cluster
+    
+    
+def make_generator(parameters):
+    if not parameters:
+        yield dict()
+    else:
+        key_to_iterate = list(parameters.keys())[0]
+        next_round_parameters = {p : parameters[p]
+                    for p in parameters if p != key_to_iterate}
+        for val in parameters[key_to_iterate]:
+            for pars in make_generator(next_round_parameters):
+                temp_res = pars
+                temp_res[key_to_iterate] = val
+                yield temp_res
+        
+        
+def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_cluster,image_wise_cluster_labels,index_start,embedding_method,gt_lines,gt_names,n_true_clusters,out_dir_orig,dataset,dist_metric=''):
+    '''
+    
+    Find best clustering algorithm and hyperparameters using the provided methods and ranges, evaluated on the training set
+
+    Parameters
+    ----------
+    cluster_hyper_param_ranges : TYPE (dict(str: dict(str: iterable)))
+        DESCRIPTION. Dictionary of clustering method, each a dictionary of parameter name with an iterable of values 
+    data_to_cluster : TYPE (numpy.ndarray)
+        DESCRIPTION.: Array of image embeddings
+    image_wise_cluster_labels : TYPE (list[int])
+        DESCRIPTION.: List of cluster numbers per image
+    index_start : TYPE(integer)
+        DESCRIPTION.: Index at which images are started being numbered, ex: 0, 1, etc
+    embedding_method : TYPE (string)
+        DESCRIPTION. Name of embedding method
+    gt_lines : TYPE (list[set(string)])
+        DESCRIPTION.: List of sets of image indices in string format per ground truth cluster
+    gt_names : TYPE(list[string])
+        DESCRIPTION.: List of cluster names for each cluster in gt_lines in the same order
+    n_true_clusters : TYPE
+        DESCRIPTION.
+    out_dir_orig : TYPE
+        DESCRIPTION.
+    dataset : TYPE
+        DESCRIPTION.
+    dist_metric : TYPE, optional (string)
+        DESCRIPTION. The default is ''.: Pairwise distance metric
+
+    Returns
+    -------
+    best_method_sklearn: TYPE
+        DESCRIPTION.
+
+    '''
+    results_df = pd.DataFrame()
+    for method, param_grid in cluster_hyper_param_ranges.items():
+        logger.info(list(make_generator(param_grid)))
+        for params in make_generator(param_grid):
+                
+            if method == "DBSCAN":
+                if len(dist_metric):
+                    logger.info("Setting best distance measure - {}", dist_metric)
+                    fixed_params = {"metric": dist_metric}
+                    params.update(fixed_params)
+                ca = DBSCAN( **params )
+            if method == "OPTICS":
+                if len(dist_metric):
+                    logger.info("Setting best distance measure - {}", dist_metric)
+                    fixed_params = {"metric": dist_metric}
+                    params.update(fixed_params)
+                ca = OPTICS( **params )
+            if method == "Birch":
+                ca = Birch( **params )
+            if method == "AffinityPropagation":
+                ca = AffinityPropagation( **params )
+                
+            logger.info(ca)
+            out_dir_emb = out_dir_orig + '/'+embedding_method
+            
+            cluster_method_str = method + '_'  
+            for param,value in params.items():
+                try:
+                    value = round(value,2)
+                except:
+                    value = value
+                cluster_method_str = cluster_method_str + param + '_' + str(value)
+                    
+            out_dir = out_dir_emb + '/parameter_selection'  
+            if not os.path.exists('./' + out_dir):
+                os.mkdir('./' + out_dir)
+            out_dir = out_dir + '/'+cluster_method_str  
+            if not os.path.exists('./' + out_dir):
+                os.mkdir('./' + out_dir) 
+            try: # warm start
+                with open('./' + out_dir + '/evaluation_metrics/eval_metrics_dict.pkl','rb') as f:
+                    eval_metrics_dict = pkl.load(f)           
+            except:
+                n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(data_to_cluster,ca,index_start)
+                eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,'',out_dir,n_true_clusters,gt_names)
+                eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
+                eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
+                eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin
+                eval_metrics_dict['clustering method'] = ca
+                # Save to file and use for warm start
+                with open('./' + out_dir + '/evaluation_metrics/eval_metrics_dict.pkl','wb') as f:
+                    pkl.dump(eval_metrics_dict,f)
+            if len(results_df) == 0:
+                results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
+            results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' embedding ' +  cluster_method_str + ' clustering'))
+        
+    if ('MMR F1 score' in eval_metrics_dict):
+        results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)
+        
+    best_method = results_df.index[0]
+    logger.info('Best method {}',best_method)
+    
+    results_df.to_csv('./' + out_dir_orig + '/hyperparameter_opt_all_methods_sorted_' + dataset + '.csv')
+    
+    best_method_sklearn = results_df['clustering method'][best_method]
+    
+    return best_method_sklearn,best_method
+            
+
 def main():
 # Main driver
+    #embedding_methods = ['alexnet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
     embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
     clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
+    #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     #datasets = ['real','synthetic']
     #datasets = ['real']
     datasets = ['synthetic']  
     
     # Hyper-parameter ranges for cross-validation
-    # cluster_hyper_param_ranges = {"DBSCAN": {"eps":np.arange(0.1,1,0.1)}
-    #                               }
+    # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+    #cluster_hyper_param_ranges = {"DBSCAN": {"eps":"infer","min_samples":range(2,10)}}
+    #cluster_hyper_param_ranges = {"DBSCAN": {"eps":np.arange(0.1,1,0.1),"min_samples":range(2,10)}}
+    cluster_hyper_param_ranges = {"DBSCAN": 
+                                      {"eps":np.arange(0.25,3,0.25),
+                                       "min_samples":range(2,10)},
+                                  "OPTICS":
+                                      {"max_eps":np.arange(0.25,3,0.25),
+                                       "min_samples":range(2,10)},
+                                  "Birch":
+                                      {"threshold":np.arange(0.1,1,0.1),
+                                       "branching_factor": range(10,100,10),
+                                       "n_clusters": [None]},
+                                  "AffinityPropagation":
+                                      {"damping":np.arange(0.5,1,0.1),"random_state":[7]}
+                                  }
     
     
     for dataset in datasets:
@@ -575,6 +728,10 @@ def main():
             train_cluster_inds, test_cluster_inds, train_clusters, test_clusters = train_test_split_complexes(gt_lines)
             train_image_wise_cluster_labels, train_vectors, test_image_wise_cluster_labels, test_vectors = get_train_images(image_wise_cluster_labels,train_cluster_inds,data_to_cluster)
             
+            train_cluster_names = [gt_names[ind] for ind in train_cluster_inds]
+            test_cluster_names = [gt_names[ind] for ind in test_cluster_inds]
+            
+            
             silhouette_dict_full = evaluate_embeddings(data_to_cluster, image_wise_cluster_labels)
             
             silhouette_dict = evaluate_embeddings(train_vectors, train_image_wise_cluster_labels)
@@ -595,16 +752,24 @@ def main():
             
             # Training clustering hyper parameters using training data
             
+            best_method,best_method_name = cluster_hyperparameter_optimization(cluster_hyper_param_ranges,train_vectors,train_image_wise_cluster_labels,index_start,embedding_method,train_clusters,train_cluster_names,n_true_clusters,out_dir_orig,dataset,silhouette_dict['max_silhouette_distance'])
+
+            # Final clustering on full data using the best method and parameters
+            best_clustering_methods = [(best_method,best_method_name)]
             
-            
-            for clustering_method in clustering_methods:
-                out_dir = out_dir_emb + '/'+str(clustering_method)  
+            for clustering_method_tup in best_clustering_methods:
+                clustering_method,clustering_method_name = clustering_method_tup
+                clustering_method_name = clustering_method_name.split('embedding')[1].split('clustering')[0].rstrip()
+                out_dir = out_dir_emb + '/'+str(clustering_method_name)  
                 if not os.path.exists('./' + out_dir):
                     os.mkdir('./' + out_dir)
+                    
+                #cluster_hyperparameter_optimization_clusteval(data_to_cluster,clustering_method)
                                  
-                n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(data_to_cluster,clustering_method,index_start)
-                write_clusters(clusterwise_indices_str,clustering_method,out_dir)                
-                eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,embedding_method + '_' + str(clustering_method),out_dir,n_true_clusters,gt_names)
+                n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(data_to_cluster,clustering_method,index_start,silhouette_dict['max_silhouette_distance'])
+                write_clusters(clusterwise_indices_str,'',out_dir)                
+                
+                eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,'',out_dir,n_true_clusters,gt_names)
                 eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
                 eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
                 eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin

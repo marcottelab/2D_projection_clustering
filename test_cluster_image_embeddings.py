@@ -40,9 +40,12 @@ def test_get_image_embedding(test_data):
 def test_cluster_data(test_vectors):
     clusterwise_indices = get_cluster_wise_indices(1, np.array([-1, -1]))
     assert clusterwise_indices == [[0,1]], clusterwise_indices
-    n_clus, clusterwise_indices_str,unsupervised_score_silhouette = cluster_data(test_vectors,DBSCAN(),0)
+    n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(test_vectors,DBSCAN(),0)
     assert n_clus == 1, n_clus
     assert clusterwise_indices_str == [({'0', '1'}, 1)]
+    print(unsupervised_score_silhouette)
+    print(unsupervised_score_calinski_harabasz)
+    print(unsupervised_score_davies_bouldin)
  
     
 def test_evaluate_clusters():
