@@ -670,7 +670,7 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
 
 def main():
 # Main driver
-    #embedding_methods = ['alexnet']
+    #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
     embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
@@ -686,17 +686,23 @@ def main():
     #cluster_hyper_param_ranges = {"DBSCAN": {"eps":np.arange(0.1,1,0.1),"min_samples":range(2,10)}}
     cluster_hyper_param_ranges = {"DBSCAN": 
                                       {"eps":np.arange(0.25,3,0.25),
-                                       "min_samples":range(2,10)},
+                                        "min_samples":range(2,10)},
                                   "OPTICS":
                                       {"max_eps":np.arange(0.25,3,0.25),
-                                       "min_samples":range(2,10)},
+                                        "min_samples":range(2,10)},
                                   "Birch":
                                       {"threshold":np.arange(0.1,1,0.1),
-                                       "branching_factor": range(10,100,10),
-                                       "n_clusters": [None]},
+                                        "branching_factor": range(10,100,10),
+                                        "n_clusters": [None]},
                                   "AffinityPropagation":
                                       {"damping":np.arange(0.5,1,0.1),"random_state":[7]}
                                   }
+    
+    # cluster_hyper_param_ranges = {
+    #                               "OPTICS":
+    #                                   {"max_eps":np.arange(0.25,3,0.25),
+    #                                    "min_samples":range(2,10)}
+    #                               }    
     
     
     for dataset in datasets:
@@ -734,7 +740,9 @@ def main():
             train_cluster_names = [gt_names[ind] for ind in train_cluster_inds]
             test_cluster_names = [gt_names[ind] for ind in test_cluster_inds]
             
-            
+            train_cluster_array = np.vstack(train_vectors)
+            test_cluster_array = np.vstack(test_vectors)
+                        
             silhouette_dict_full = evaluate_embeddings(data_to_cluster, image_wise_cluster_labels)
             
             silhouette_dict = evaluate_embeddings(train_vectors, train_image_wise_cluster_labels)
@@ -755,7 +763,7 @@ def main():
             
             # Training clustering hyper parameters using training data
             
-            best_method,best_method_name = cluster_hyperparameter_optimization(cluster_hyper_param_ranges,train_vectors,train_image_wise_cluster_labels,index_start,embedding_method,train_clusters,train_cluster_names,n_true_clusters,out_dir_orig,dataset,silhouette_dict['max_silhouette_distance'])
+            best_method,best_method_name = cluster_hyperparameter_optimization(cluster_hyper_param_ranges,train_cluster_array,train_image_wise_cluster_labels,index_start,embedding_method,train_clusters,train_cluster_names,n_true_clusters,out_dir_orig,dataset,silhouette_dict['max_silhouette_distance'])
 
             # Final clustering on full data using the best method and parameters
             best_clustering_methods = [(best_method,best_method_name)]
@@ -783,7 +791,9 @@ def main():
                 results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' embedding ' +  str(clustering_method) + ' clustering'))
                 
                 # On test data
-                test_eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,'test',out_dir,n_true_clusters,gt_names)
+                n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(test_cluster_array,clustering_method,index_start,silhouette_dict['max_silhouette_distance'])
+                
+                test_eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,test_clusters,n_clus,'test',out_dir,len(test_clusters),test_cluster_names)
                 test_eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
                 test_eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
                 test_eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin
