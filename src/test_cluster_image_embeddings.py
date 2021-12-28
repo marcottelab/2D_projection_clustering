@@ -10,8 +10,8 @@ import numpy as np
 
 
 def test_get_config():
-    assert get_config(dataset='real') == ('./data/real_dataset/mixture_2D.mrcs', './data/real_dataset/mixture_classification.txt', '   ', 1, 'results_real_dataset')
-    assert get_config(dataset='synthetic') == ('./data/synthetic_dataset/synthetic_2D.mrcs', './data/synthetic_dataset/synthetic_true_clustering.txt', '\t', 0, 'results_synthetic_dataset')
+    assert get_config(dataset='real') == ('./data/real_dataset/mixture_2D.mrcs', './data/real_dataset/mixture_classification.txt', '   ', 1, 'real')
+    assert get_config(dataset='synthetic') == ('./data/synthetic_dataset/synthetic_2D.mrcs', './data/synthetic_dataset/synthetic_true_clustering.txt', '\t', 0, 'synthetic')
 
 
 def test_read_data():        
