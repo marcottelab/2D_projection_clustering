@@ -19,7 +19,7 @@ Make sure all the models of interest (ex: 'alexnet', 'vgg','densenet','resnet-18
 Data used in our test experiments is from this work: https://doi.org/10.1016/j.jsb.2019.107416.  
 Pls contact meghana.palukuri@utexas.edu for this data.  
 
-Make sure the data is present in the specified format and in a folder called data at the same level as the file cluster_image_embeddings.py
+Make sure the data is present in the specified format and in a folder called data at one directory level above the file cluster_image_embeddings.py
 ```
 python cluster_image_embeddings.py
 ```

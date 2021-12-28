@@ -1,5 +1,8 @@
-results_*
-visual*
+results*
+models*
+data*
+img2vec*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

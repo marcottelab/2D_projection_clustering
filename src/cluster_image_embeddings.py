@@ -8,18 +8,8 @@ Created on Wed Oct 20 13:43:45 2021
 
 import traceback
 import faulthandler
-
 faulthandler.enable()
-from sklearn.cluster import DBSCAN,AffinityPropagation,MeanShift,OPTICS,Birch, estimate_bandwidth
-from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
-from img2vec_pytorch import Img2Vec
-from PIL import Image
-from matplotlib import cm
-from sklearn.decomposition import PCA, TruncatedSVD
-from loguru import logger
-from sklearn import manifold
 
-#from clusteval import clusteval
 import mrcfile
 import numpy as np
 import pandas as pd
@@ -28,8 +18,19 @@ import matplotlib.pyplot as plt
 import random
 import pickle as pkl
 
+from sklearn.cluster import DBSCAN,AffinityPropagation,MeanShift,OPTICS,Birch
+from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
+from img2vec_pytorch import Img2Vec
+from PIL import Image
+from sklearn.decomposition import PCA, TruncatedSVD
+from loguru import logger
+from sklearn import manifold
+
 from eval_complex import compute_metrics
 from siamese_embedding import siamese_embedding
+
+#from clusteval import clusteval
+#from matplotlib import cm
 
 def get_config(dataset='real'):
     '''
@@ -660,7 +661,7 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
                     value = round(value,2)
                 except:
                     value = value
-                if (param is not "metric") and (param is not "metric_params") and (param is not "algorithm"):
+                if (param != "metric") and (param != "metric_params") and (param != "algorithm"):
                     cluster_method_str = cluster_method_str + param + '_' + str(value)
                     
             out_dir = out_dir_emb + '/tuning'  
@@ -714,7 +715,7 @@ def main():
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
-    clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
+    #clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     #datasets = ['real','synthetic']
     #datasets = ['real']
@@ -737,6 +738,8 @@ def main():
     #                               "AffinityPropagation":
     #                                   {"damping":np.arange(0.5,1,0.1),"random_state":[7]}
     #                               }
+    
+    # To do: Add mean shift
     
     cluster_hyper_param_ranges = {
                                   "OPTICS":
