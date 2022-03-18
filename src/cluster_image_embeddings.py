@@ -28,6 +28,7 @@ from sklearn import manifold
 
 from eval_complex import compute_metrics
 from siamese_embedding import siamese_embedding
+from read_node2vec_embeddings import slicem_node2vec_graph_embeddings
 
 #from clusteval import clusteval
 #from matplotlib import cm
@@ -124,7 +125,7 @@ def read_data(images_file_name, images_true_labels, sep):
     return data, gt_lines, gt_names
 
 
-def get_image_embedding(data,embedding_model = 'resnet-18'):  
+def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0):  
     '''
     Get vector embeddings for each image in the data using a neural network model from img2vec
     
@@ -160,8 +161,17 @@ def get_image_embedding(data,embedding_model = 'resnet-18'):
     if embedding_model in ['alexnet', 'vgg','densenet','resnet-18']:
         img2vec = Img2Vec(model=embedding_model)     
         vectors = img2vec.get_vec(list_of_PIL_imgs)
+        
+        if combine_graph_flag:
+            graph_vectors = slicem_node2vec_graph_embeddings()
+            
+            vectors = np.hstack((vectors,graph_vectors))
+            logger.info('Stacked image + graph embedding array shape: {}',np.shape(vectors))
+            
     elif embedding_model == 'siamese':
         vectors = siamese_embedding(list_of_PIL_imgs)
+    elif embedding_model == 'slicem-graph-node2vec':
+        vectors = slicem_node2vec_graph_embeddings()
     else:
         logger.error('Embedding model not found. Returning flattened images')
         vectors = data.flatten().reshape(100,96*96)  # Just flattened data: Check if correct
@@ -299,6 +309,7 @@ def myfun():
     Returns a constant number, useful to set constant random state
     '''
     return 0.42
+
 
 def get_train_images(image_wise_cluster_labels,train_cluster_inds,vectors,index_start):
     '''
@@ -670,11 +681,15 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
             out_dir = out_dir + '/'+cluster_method_str  
             if not os.path.exists(main_results_dir + '/' + out_dir):
                 os.mkdir(main_results_dir + '/' + out_dir) 
-            try: # warm start
+            
+            warm_start = 0
+            if os.path.exists(main_results_dir + '/' + out_dir + '/eval_metrics_dict.pkl'):
+                warm_start = 1
+                
+            if warm_start:
                 with open(main_results_dir + '/' + out_dir + '/eval_metrics_dict.pkl','rb') as f:
-                    eval_metrics_dict = pkl.load(f)           
-            except:
-                logger.warning(traceback.format_exc())
+                    eval_metrics_dict = pkl.load(f)   
+            else:
                 try:
                     logger.info("Clustering...")
                     n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(data_to_cluster,ca,index_start)
@@ -710,42 +725,46 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
 
 def main():
 # Main driver
+    #combine_graph_flag = 1
+    combine_graph_flag = 0
     
-    embedding_methods = ['densenet']
+    #embedding_methods = ['slicem-graph-node2vec']
+    
+    #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
-    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
+    embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
     #clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     #datasets = ['real','synthetic']
-    #datasets = ['real']
-    datasets = ['synthetic']  
+    datasets = ['real']
+    #datasets = ['synthetic']  
     
     # Hyper-parameter ranges for cross-validation
     # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
     #cluster_hyper_param_ranges = {"DBSCAN": {"eps":"infer","min_samples":range(2,10)}}
     #cluster_hyper_param_ranges = {"DBSCAN": {"eps":np.arange(0.1,1,0.1),"min_samples":range(2,10)}}
-    # cluster_hyper_param_ranges = {"DBSCAN": 
-    #                                   {"eps":np.arange(0.25,3,0.25),
-    #                                     "min_samples":range(2,10)},
-    #                               "OPTICS":
-    #                                   {"max_eps":np.arange(0.25,3,0.25),
-    #                                     "min_samples":range(2,10)},
-    #                               "Birch":
-    #                                   {"threshold":np.arange(0.1,1,0.1),
-    #                                     "branching_factor": range(10,100,10),
-    #                                     "n_clusters": [None]},
-    #                               "AffinityPropagation":
-    #                                   {"damping":np.arange(0.5,1,0.1),"random_state":[7]}
-    #                               }
+    cluster_hyper_param_ranges = {"DBSCAN": 
+                                      {"eps":np.arange(0.25,3,0.25),
+                                        "min_samples":range(2,10)},
+                                  "OPTICS":
+                                      {"max_eps":np.arange(0.25,3,0.25),
+                                        "min_samples":range(2,10)},
+                                  "Birch":
+                                      {"threshold":np.arange(0.1,1,0.1),
+                                        "branching_factor": range(10,100,10),
+                                        "n_clusters": [None]},
+                                  "AffinityPropagation":
+                                      {"damping":np.arange(0.5,1,0.1),"random_state":[7]}
+                                  }
     
     # To do: Add mean shift
     
-    cluster_hyper_param_ranges = {
-                                  "OPTICS":
-                                      {"max_eps":np.arange(0.25,3,0.25),
-                                        "min_samples":range(2,10)}
-                                  }    
+    # cluster_hyper_param_ranges = {
+    #                               "OPTICS":
+    #                                   {"max_eps":np.arange(0.25,3,0.25),
+    #                                     "min_samples":range(2,10)}
+    #                               }    
     
     #main_results_dir = '.'
     main_results_dir = '../results'
@@ -787,6 +806,13 @@ def main():
             data_to_cluster = get_image_embedding(data,embedding_method)
             
             data_to_cluster = reduce_dimensions(data_to_cluster)
+            
+            # Get graph embeddings and combine 
+            if combine_graph_flag:
+                graph_vectors = slicem_node2vec_graph_embeddings()
+                graph_vectors = reduce_dimensions(graph_vectors)
+                
+                data_to_cluster = np.hstack((data_to_cluster,graph_vectors))  
             
             image_wise_cluster_labels = get_image_wise_cluster_labels(data_to_cluster,gt_lines,index_start)
             
