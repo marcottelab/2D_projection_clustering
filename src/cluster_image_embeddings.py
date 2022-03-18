@@ -729,7 +729,6 @@ def main():
     combine_graph_flag = 0
     
     #embedding_methods = ['slicem-graph-node2vec']
-    
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
