@@ -1,0 +1,1 @@
+C:\Users\Meghana\Box Sync\Research\EdwardMarcotte\CryoEMproject\code_data_results\src\node2vec-master>python src/main.py --input graph/real_graph.txt --output emb/real_graph_embeddings.txt --weighted
