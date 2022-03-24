@@ -74,7 +74,8 @@ dataset_type = 'synthetic'
 #dataset_type = 'real'
 
 #combined_opts = [True,False]
-combined = False
+#combined = False
+combined = True
 
 #graph_name_opts = ['top5_graph']
 graph_name_opts = ['all_neigs_graph','top5_graph','top5_graph_unnorm']
@@ -87,10 +88,14 @@ for graph_name in graph_name_opts:
     
     if combined:
         # Read image node embeddings as features
-        with open('../results/real_original_replicate/densenet/densenet_reduced_embeddings.npy', 'rb') as f:
-            image_embeddings = np.load(f)
-            
-        node_data = pd.DataFrame(image_embeddings,index=[str(num) for num in range(100)])
+        if dataset_type == 'real':
+            with open('../results/real_original_replicate/densenet/densenet_reduced_embeddings.npy', 'rb') as f:
+                image_embeddings = np.load(f)
+        else: # synthetic
+            with open('../results/synthetic_original_replicate/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
+                image_embeddings = np.load(f)
+                
+        node_data = pd.DataFrame(image_embeddings,index=[str(num) for num in range(len(image_embeddings))])
         G = StellarGraph.from_networkx(g, node_features=node_data)
     else:
         G = StellarGraph.from_networkx(g)

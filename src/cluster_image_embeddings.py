@@ -751,12 +751,12 @@ def main():
     #graph_embedding_method = 'wys'
     #graph_embedding_method = 'graphWave'
     
-    #embedding_methods = ['graphSage','attri2vec','gcn','cluster_gcn','gat','APPNP']
+    embedding_methods = ['graphSage','attri2vec','gcn','cluster_gcn','gat','APPNP']
     #embedding_methods = ['slicem-graph-' + graph_embedding_method]
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
-    embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
+    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
     #clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     
