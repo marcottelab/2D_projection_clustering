@@ -126,7 +126,7 @@ def read_data(images_file_name, images_true_labels, sep):
     return data, gt_lines, gt_names
 
 
-def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,graph_embedding_method=None):  
+def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,graph_embedding_method=None,dataset='real'):  
     '''
     Get vector embeddings for each image in the data using a neural network model from img2vec
     
@@ -164,7 +164,7 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
         vectors = img2vec.get_vec(list_of_PIL_imgs)
         
         if combine_graph_flag:
-            graph_vectors = slicem_graph_embeddings(graph_embedding_method)
+            graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
             
             vectors = np.hstack((vectors,graph_vectors))
             logger.info('Stacked image + graph embedding array shape: {}',np.shape(vectors))
@@ -172,12 +172,13 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
     elif embedding_model == 'siamese':
         vectors = siamese_embedding(list_of_PIL_imgs)
     elif embedding_model == 'slicem-graph-' + str(graph_embedding_method):
-        vectors = slicem_graph_embeddings(graph_embedding_method)
+        vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
     elif embedding_model in ['graphSage','attri2vec','gcn','cluster_gcn','gat','APPNP']:
-        vectors = slicem_graph_embeddings(embedding_model)
+        vectors = slicem_graph_embeddings(dataset,embedding_model)
     else:
         logger.error('Embedding model not found. Returning flattened images')
         vectors = data.flatten().reshape(100,96*96)  # Just flattened data: Check if correct
+    logger.info('Embedding array shape: {}',np.shape(vectors))
 
     return vectors
 
@@ -299,7 +300,6 @@ def get_image_wise_cluster_labels(vectors,gt_lines,index_start):
     Returns:
     image_wise_cluster_labels (list[int]): List of cluster numbers per image
     '''
-    
     image_wise_cluster_labels = [-1]*len(vectors)
     
     for cluster_ind,cluster in enumerate(gt_lines):
@@ -751,7 +751,7 @@ def main():
     #graph_embedding_method = 'wys'
     #graph_embedding_method = 'graphWave'
     
-    embedding_methods = ['graphSage','attri2vec','gcn','cluster_gcn','gat','APPNP']
+    embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
     #embedding_methods = ['slicem-graph-' + graph_embedding_method]
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
@@ -845,7 +845,7 @@ def main():
             out_dir_emb = out_dir_orig + '/'+embedding_method
             if not os.path.exists(main_results_dir + '/' + out_dir_emb):
                 os.mkdir(main_results_dir + '/' + out_dir_emb)
-            data_to_cluster = get_image_embedding(data,embedding_method,combine_graph_flag_internal,graph_embedding_method)
+            data_to_cluster = get_image_embedding(data,embedding_method,combine_graph_flag_internal,graph_embedding_method,dataset)
             
             data_to_cluster = reduce_dimensions(data_to_cluster)
             
@@ -855,7 +855,7 @@ def main():
             
             # Get graph embeddings and combine 
             if combine_graph_flag:
-                graph_vectors = slicem_graph_embeddings(graph_embedding_method)
+                graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
                 graph_vectors = reduce_dimensions(graph_vectors)
                 
                 data_to_cluster = np.hstack((data_to_cluster,graph_vectors))  
