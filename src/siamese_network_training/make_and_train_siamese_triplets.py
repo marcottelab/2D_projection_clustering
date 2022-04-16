@@ -25,9 +25,10 @@ from tensorflow.keras.applications import resnet
 from loguru import logger
 import pickle
 
-dataset = 'synthetic_more_projections'
+dataset_name = 'synthetic_more_projs'
+#dataset_name = 'synthetic'
 
-images_file_name,images_true_labels,sep,index_start,out_dir_orig = get_config(dataset)
+images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset_name)
 
 out_dir_orig = out_dir_orig + 'maketriplets'
 if not os.path.exists('./' + out_dir_orig):
@@ -36,14 +37,16 @@ if not os.path.exists('./' + out_dir_orig):
 # Setting logger
 logger.add('./' + out_dir_orig + '/log_file.txt',level="INFO")
     
-data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep)
+data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep, sep2)
 
+logger.info('Lenth of data {}',len(data))
+logger.info('Lenth of complexes {}',len(gt_lines))
+logger.info('Lenth of complex names {}',len(gt_names))
 siamese_pairs = []
 siamese_triples_with_10_sampled_negs = [] # Format: anchor, positive, negative
 
 # Starting from index 0
 all_images = set(range(len(data)))
-
 
 for cluster_set in gt_lines:
     cluster_pairs = list(combinations(cluster_set, 2))
@@ -57,6 +60,7 @@ for cluster_set in gt_lines:
             
         siamese_triples_with_10_sampled_negs = siamese_triples_with_10_sampled_negs + [(pair[0],pair[1],str(neg)) for neg in sampled_negatives]
        
+logger.info('N triples {}',len(siamese_triples_with_10_sampled_negs))
 logger.info('Converting images...')
 converted_data =[tf.keras.preprocessing.image.img_to_array(Image.fromarray(np.uint8(data_arr*255)).convert('RGB')) for data_arr in data] 
 logger.info('Making anchor images list...')
@@ -71,6 +75,9 @@ logger.info('Making negative images list...')
 #negative_images = [data[int(triple[2])] for triple in siamese_triples_with_10_sampled_negs]
 negative_images = [converted_data[int(triple[2])] for triple in siamese_triples_with_10_sampled_negs]
 
+logger.info('N pos {}',len(positive_images))
+logger.info('N neg = {}', len(negative_images))
+logger.info('N anchor = {}', len(anchor_images))
 
 
 logger.info('Constructing anchor dataset...')
@@ -92,6 +99,8 @@ image_count = len(anchor_images)
 train_dataset = dataset.take(round(image_count * 0.8))
 val_dataset = dataset.skip(round(image_count * 0.8))
 
+logger.info('Training data samples {}',len(train_dataset))
+logger.info('Validation data samples = {}', len(val_dataset))
 train_dataset = train_dataset.batch(32, drop_remainder=False)
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 train_dataset = train_dataset.prefetch(AUTOTUNE)
@@ -100,8 +109,8 @@ val_dataset = val_dataset.batch(32, drop_remainder=False)
 val_dataset = val_dataset.prefetch(AUTOTUNE)
 
 logger.info('Writing datasets to file...')
-tf.data.experimental.save(train_dataset,'train_dataset.tf')
-tf.data.experimental.save(val_dataset,'val_dataset.tf')
+tf.data.experimental.save(train_dataset,dataset_name+'train_dataset.tf')
+tf.data.experimental.save(val_dataset,dataset_name+'val_dataset.tf')
 
 
 """
@@ -281,10 +290,10 @@ anchor_embedding, positive_embedding, negative_embedding = (
 )
 
 try:
-    with open(dataset+'_siamese_embedding_model.pkl','wb') as f:
+    with open(dataset_name+'siamese_embedding_model.pkl','wb') as f:
         pickle.dump(embedding,f)
 except:
-    embedding.save(dataset+'_siamese_embedding_model.tf')
+    embedding.save(dataset_name+'siamese_embedding_model.tf')
     
 
 """

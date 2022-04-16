@@ -15,7 +15,7 @@ out_path =  "../data/synthetic_more_projections/"
 mrcs_file = out_path+"16SRIBOSOMALRNA_1HNW_proj.mrcs"
 
 
-shape, projection_2D = get_projection_2D(mrcs=mrcs_file, factor=1,out_size=(200,200),resize=True)
+shape, projection_2D = get_projection_2D(mrcs=mrcs_file, factor=1,out_size=(350,350),resize=True)
 #shape, projection_2D = get_projection_2D(mrcs=mrcs_file, factor=2)
 projection_2D_arr = np.array(list(projection_2D.values()))
 

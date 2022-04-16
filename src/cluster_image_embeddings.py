@@ -53,26 +53,29 @@ def get_config(dataset='real'):
         images_file_name = '../data/real_dataset/mixture_2D.mrcs' 
         images_true_labels = '../data/real_dataset/mixture_classification.txt'
         sep ='   '
+        sep2=', '
         index_start = 1
         out_dir = 'real'
     elif dataset == 'synthetic_more_projs':
         images_file_name = '../data/synthetic_more_projections/synthetic_more_projections.mrcs' 
         images_true_labels = '../data/synthetic_more_projections/true_clustering.txt'
         sep = '\t'
+        sep2=','
         index_start = 0
         out_dir = 'synthetic_more_projs'      
     else: # synthetic
         images_file_name = '../data/synthetic_dataset/synthetic_2D.mrcs' 
         images_true_labels = '../data/synthetic_dataset/synthetic_true_clustering.txt'
         sep = '\t'
+        sep2=', '
         index_start = 0
         out_dir = 'synthetic' 
 
         
-    return images_file_name,images_true_labels,sep,index_start,out_dir
+    return images_file_name,images_true_labels,sep,index_start,out_dir,sep2
 
 
-def read_clusters(images_true_labels,sep):
+def read_clusters(images_true_labels,sep,sep2=', '):
     '''
     Reads clustered labels
 
@@ -92,12 +95,12 @@ def read_clusters(images_true_labels,sep):
         #gt_names = [line[0:sep] for line in raw_lines]
         #gt_lines = [set(line.rstrip()[sep:-1].split(', ')) for line in raw_lines]
         # Assuming format is [4,5,23,..]
-        gt_lines = [set(line[1].lstrip()[1:-1].split(', ')) for line in list_of_tuples]
+        gt_lines = [set(line[1].lstrip()[1:-1].split(sep2)) for line in list_of_tuples]
         
     return gt_lines, gt_names
 
     
-def read_data(images_file_name, images_true_labels, sep):
+def read_data(images_file_name, images_true_labels, sep, sep2=', '):
     '''
     Reads MRC data and ground truth labels
 
@@ -112,7 +115,7 @@ def read_data(images_file_name, images_true_labels, sep):
     gt_names (list[string]): List of cluster names for each cluster in gt_lines in the same order
     
     '''
-    gt_lines, gt_names =  read_clusters(images_true_labels,sep)
+    gt_lines, gt_names =  read_clusters(images_true_labels,sep,sep2)
     
     mrc = mrcfile.open(images_file_name, mode='r+')
     data = mrc.data
@@ -843,7 +846,7 @@ def main():
             config[my_var_name] = var            
     
         for dataset in datasets:
-            images_file_name,images_true_labels,sep,index_start,out_dir_orig = get_config(dataset)
+            images_file_name,images_true_labels,sep,index_start,out_dir_orig,sep2 = get_config(dataset)
             out_dir_orig = out_dir_orig + out_dir_suffix
     
             for var in [images_file_name,images_true_labels,sep,index_start,out_dir_orig]:
@@ -860,7 +863,7 @@ def main():
             # Setting logger
             logger.add(results_dir + '/log_file.txt',level="INFO")
                 
-            data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep)
+            data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep, sep2)
             n_true_clusters = len(gt_lines)
                     
             results_df = pd.DataFrame()
