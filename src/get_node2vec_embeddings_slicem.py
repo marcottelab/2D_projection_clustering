@@ -69,16 +69,18 @@ def cluster_reorder(sequence, subjects):
     # shuffle the subjects into the same order as the sequence yield
     return subjects[sequence.node_order]
 
-
-dataset_type = 'synthetic'
-#dataset_type = 'real'
+embedding_to_combine = ''
+#dataset_type = 'synthetic'
+dataset_type = 'real'
 
 #combined_opts = [True,False]
 #combined = False
 combined = True
+#embedding_to_combine = 'densenet' 
+embedding_to_combine = 'siamese'
 
-#graph_name_opts = ['top5_graph']
-graph_name_opts = ['all_neigs_graph','top5_graph','top5_graph_unnorm']
+graph_name_opts = ['top5_graph']
+#graph_name_opts = ['all_neigs_graph','top5_graph','top5_graph_unnorm']
 
 #graph_name = 'top5_graph'
 
@@ -89,8 +91,12 @@ for graph_name in graph_name_opts:
     if combined:
         # Read image node embeddings as features
         if dataset_type == 'real':
-            with open('../results/real_original_replicate/densenet/densenet_reduced_embeddings.npy', 'rb') as f:
-                image_embeddings = np.load(f)
+            if embedding_to_combine == 'siamese':
+                with open('../results/real_siamese_transferred/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
+                    image_embeddings = np.load(f)
+            else:
+                with open('../results/real_original_replicate/densenet/densenet_reduced_embeddings.npy', 'rb') as f:
+                    image_embeddings = np.load(f)
         else: # synthetic
             with open('../results/synthetic_original_replicate/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
                 image_embeddings = np.load(f)
@@ -432,8 +438,8 @@ for graph_name in graph_name_opts:
                 graphsage_model, graphsage_generator, epochs=epochs)
     
         # Write node embeddings to file
-        with open('../data/' + dataset_type + '_dataset/' + graph_name + '_stellar_' + node_embedding_method + '.npy', 'wb') as f:
+        with open('../data/' + dataset_type + '_dataset/' + graph_name + '_stellar_' + node_embedding_method + embedding_to_combine + '.npy', 'wb') as f:
             np.save(f, node_embeddings)
             
-        with open('../data/' + dataset_type + '_dataset/' + graph_name + '_stellar_' + node_embedding_method + '_node_ids.list', 'wb') as f:
+        with open('../data/' + dataset_type + '_dataset/' + graph_name + '_stellar_' + node_embedding_method+ embedding_to_combine + '_node_ids.list', 'wb') as f:
             pkl_dump(node_ids,f)

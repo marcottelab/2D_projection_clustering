@@ -117,7 +117,7 @@ def write_best_matches_best4pred(best_matches_for_known,out_comp_nm,dir_nm,suffi
                 fn_write("%.3f" % float(complex_score))            
             fn_write("\n")
             
-def plot_f1_scores(best_matches,out_comp_nm,suffix,prefix):
+def plot_f1_scores(best_matches,out_comp_nm,suffix,prefix,plot_hist_flag=1):
     # plot histogram of F1 scores
     max_f1_scores = [match[2] for match in best_matches]
     
@@ -137,18 +137,19 @@ def plot_f1_scores(best_matches,out_comp_nm,suffix,prefix):
         n_no_matches = f1_score_counts[0]    
                 
     if len(set(max_f1_scores)) > 1:
-        fig = plt_figure(figsize=(12,10))
-        plt_rcParams["font.family"] = "Times New Roman"
-        plt_rcParams["font.size"] = 16
-        sns_displot(max_f1_scores)
-        plt_xlabel("F1 score")
-        plt_ylabel('Frequency')
-        plt_title(prefix + "F1 score distribution")
-        #plt_savefig(out_comp_nm +suffix+ '_f1_scores_histogram.eps',dpi=350,format='eps')
-        plt_savefig(out_comp_nm +suffix+ '_f1_scores_histogram.tiff',dpi=350,format='tiff')
-        plt_savefig(out_comp_nm +suffix+ '_f1_scores_histogram.jpg',dpi=350,format='jpg')
-        
-        plt_close(fig)    
+        if plot_hist_flag:
+            fig = plt_figure(figsize=(12,10))
+            plt_rcParams["font.family"] = "Times New Roman"
+            plt_rcParams["font.size"] = 16
+            sns_displot(max_f1_scores)
+            plt_xlabel("F1 score")
+            plt_ylabel('Frequency')
+            plt_title(prefix + "F1 score distribution")
+            #plt_savefig(out_comp_nm +suffix+ '_f1_scores_histogram.eps',dpi=350,format='eps')
+            plt_savefig(out_comp_nm +suffix+ '_f1_scores_histogram.tiff',dpi=350,format='tiff')
+            plt_savefig(out_comp_nm +suffix+ '_f1_scores_histogram.jpg',dpi=350,format='jpg')
+            
+            plt_close(fig)    
         
     with open(out_comp_nm + '_metrics.txt', "a") as fid:
         print(prefix, file=fid)
@@ -189,6 +190,9 @@ def plot_pr_curve_mmr(Metric,fin_list_graphs,out_comp_nm):
 def f1_similarity(P,T):
     C = len(T.intersection(P))
     
+    if len(P) == 0 or len(T) == 0:
+        return 0, C 
+    
     Precision = float(C) / len(P)
     Recall = float(C) / len(T)
     
@@ -200,7 +204,7 @@ def f1_similarity(P,T):
     return F1_score, C 
 
 
-def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp,out_comp_nm,suffix,dir_nm,plot_pr_flag=0,gt_names=[]):
+def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp,out_comp_nm,suffix,dir_nm,plot_pr_flag=0,gt_names=[],plot_hist_flag=1):
 
     Metric = np_zeros((N_test_comp, N_pred_comp))
     Common_nodes = np_zeros((N_test_comp, N_pred_comp))
@@ -246,8 +250,8 @@ def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_te
     max_indices_j = np_argmax(Metric, axis=1)
     best_matches_4known = [(fin_list_graphs[j][0],known_complex_nodes_list[i],Metric[i,j],fin_list_graphs[j][1]) for i,j in enumerate(max_indices_j)]
     
-    avged_f1_score4known = plot_f1_scores(best_matches_4known,out_comp_nm,'_best4known'+suffix,'Best predicted match for known complexes - ')
-    avged_f1_score4pred = plot_f1_scores(best_matches_4predicted,out_comp_nm,'_best4predicted'+suffix,'Best known match for predicted complexes - ')
+    avged_f1_score4known = plot_f1_scores(best_matches_4known,out_comp_nm,'_best4known'+suffix,'Best predicted match for known complexes - ',plot_hist_flag)
+    avged_f1_score4pred = plot_f1_scores(best_matches_4predicted,out_comp_nm,'_best4predicted'+suffix,'Best known match for predicted complexes - ',plot_hist_flag)
     
     avg_f1_score = (avged_f1_score4known + avged_f1_score4pred)/2
     net_f1_score = 2 * avged_f1_score4known * avged_f1_score4pred / (avged_f1_score4known + avged_f1_score4pred)
@@ -316,6 +320,9 @@ def node_comparison_prec_recall(known_complex_nodes_list, fin_list_graphs, N_pre
             C = len(T.intersection(P))
             A = len(P.difference(T))
             B = len(T.difference(P))
+            
+            if (A+C) == 0 or (B+C) == 0:
+                return 0,0,0
 
             if float(C) / (A + C) > p and float(C) / (B + C) > p:
                 Metric[i, j] = 1
@@ -372,13 +379,13 @@ def remove_unknown_prots(fin_list_graphs_orig, prot_list):
     return fin_list_graphs
 
 
-def compute_metrics(known_complex_nodes_list, fin_list_graphs,out_comp_nm,N_test_comp,N_pred_comp,inputs,suffix,gt_names):
+def compute_metrics(known_complex_nodes_list, fin_list_graphs,out_comp_nm,N_test_comp,N_pred_comp,inputs,suffix,gt_names,plot_hist_flag=1):
     eval_metrics_dict = dict()
 
     if N_test_comp != 0 and N_pred_comp != 0:
         Precision, Recall, F1_score = node_comparison_prec_recall(known_complex_nodes_list,fin_list_graphs, N_pred_comp, N_test_comp, inputs["eval_p"],out_comp_nm+suffix)
         
-        avg_f1_score, net_f1_score,PPV,Sn,acc_unbiased,prec_MMR, recall_MMR, f1_MMR,n_matches = one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp,out_comp_nm,suffix,inputs['dir_nm'],0,gt_names)
+        avg_f1_score, net_f1_score,PPV,Sn,acc_unbiased,prec_MMR, recall_MMR, f1_MMR,n_matches = one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp,out_comp_nm,suffix,inputs['dir_nm'],0,gt_names,plot_hist_flag)
         
         with open(out_comp_nm + '_metrics.txt', "a") as fid:
             print("No. of matches in MMR = ", n_matches, file=fid)            

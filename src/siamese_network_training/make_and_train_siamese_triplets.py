@@ -25,7 +25,7 @@ from tensorflow.keras.applications import resnet
 from loguru import logger
 import pickle
 
-dataset = 'synthetic'
+dataset = 'synthetic_more_projections'
 
 images_file_name,images_true_labels,sep,index_start,out_dir_orig = get_config(dataset)
 
@@ -281,10 +281,10 @@ anchor_embedding, positive_embedding, negative_embedding = (
 )
 
 try:
-    with open('siamese_embedding_model.pkl','wb') as f:
+    with open(dataset+'_siamese_embedding_model.pkl','wb') as f:
         pickle.dump(embedding,f)
 except:
-    embedding.save('siamese_embedding_model.tf')
+    embedding.save(dataset+'_siamese_embedding_model.tf')
     
 
 """

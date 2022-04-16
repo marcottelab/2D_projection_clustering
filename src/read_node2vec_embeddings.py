@@ -8,7 +8,7 @@ Created on Wed Mar  9 10:24:48 2022
 import numpy as np
 from pickle import load as pkl_load
 
-def slicem_graph_embeddings(dataset, node_embedding_method='metapath2vec', implementation = 'stellar',graph = 'top5_unnorm'):
+def slicem_graph_embeddings(dataset, node_embedding_method='metapath2vec', implementation = 'stellar',graph = 'top5_unnorm',embedding_to_combine='siamese'):
     '''
     
 
@@ -47,10 +47,10 @@ def slicem_graph_embeddings(dataset, node_embedding_method='metapath2vec', imple
         vectors = np.array(array_nums)
         
     else: #  stellargraph
-        with open('../data/' + dataset + '_dataset/top5_graph_stellar_' + node_embedding_method + '.npy', 'rb') as f:
+        with open('../data/' + dataset + '_dataset/top5_graph_stellar_' + node_embedding_method + embedding_to_combine+ '.npy', 'rb') as f:
             node_embeddings = np.load(f)
             
-        with open('../data/' + dataset + '_dataset/top5_graph_stellar_' + node_embedding_method + '_node_ids.list', 'rb') as f:
+        with open('../data/' + dataset + '_dataset/top5_graph_stellar_' + node_embedding_method + embedding_to_combine+ '_node_ids.list', 'rb') as f:
             node_ids = pkl_load(f)
         
         int_node_ids = [int(node) for node in node_ids]
