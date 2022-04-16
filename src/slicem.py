@@ -6,6 +6,8 @@ import multiprocessing
 from scipy import ndimage as ndi
 from scipy.stats import wasserstein_distance
 from skimage import transform, measure
+from multiprocessing import cpu_count as mul_cpu_count
+
 
 SHIFT = ['Euclidean', 'L1', 'cosine'] # Metrics requiring real space translation
 
@@ -27,8 +29,8 @@ def main():
     parser.add_argument('-s', '--scale_factor', action='store', dest='scale_factor', required=False, type=float, default=1,
                         help='scale factor for downsampling. (e.g. -s 2 converts 200pix box --> 100pix box)')
     
-    parser.add_argument('-c', '--num_workers', action='store', dest='num_workers', required=False, type=int, default=1,
-                        help='number of CPUs to use, default 1')
+    parser.add_argument('-c', '--num_workers', action='store', dest='num_workers', required=False, type=int, default=0,
+                        help='number of CPUs to use, default - all cores')
     
     parser.add_argument('-d', '--domain', action='store', dest='domain', required=False, 
                         default='Fourier', choices=['Fourier', 'Real'], help='Fourier or Real space, default Fourier')
@@ -41,6 +43,12 @@ def main():
                         type=int, default=5, help='angle sampling for 1D projections in degrees, default 5')
 
     args = parser.parse_args()
+    
+    num_cores = mul_cpu_count()
+    
+    if args.num_workers == 0:
+        args.num_workers = num_cores
+        print('No. of workers = ',args.num_workers)
 
     if args.domain == 'Fourier':
         rotation_degrees = np.arange(0, 180, args.angular_sampling)
