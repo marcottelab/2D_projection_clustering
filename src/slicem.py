@@ -20,7 +20,7 @@ def main():
                         default='../data/synthetic_more_projections/synthetic_more_projections.mrcs',help='path to mrcs file of 2D class averages')
     
     parser.add_argument('-o', '--outpath', action='store', dest='outpath', required=False,
-                        default='../data/synthetic_more_projections/synthetic_more_projections_graph.txt',help='path for output files')
+                        default='../data/synthetic_more_projections/',help='path for output files')
     
     parser.add_argument('-m', '--metric', action='store', dest='metric', required=False, 
                         default='Euclidean', choices=['Euclidean', 'L1', 'cosine', 'EMD', 'correlate'],
