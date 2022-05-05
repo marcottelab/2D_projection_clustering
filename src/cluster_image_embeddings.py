@@ -97,6 +97,12 @@ def read_clusters(images_true_labels,sep,sep2=', '):
         # Assuming format is [4,5,23,..]
         gt_lines = [set(line[1].lstrip()[1:-1].split(sep2)) for line in list_of_tuples]
         
+    # Remove unknown complex for evaluation
+    for i, name in enumerate(gt_names):
+        if name == 'unk':
+            gt_names.pop(i)
+            gt_lines.pop(i)
+            
     return gt_lines, gt_names
 
     
@@ -126,12 +132,6 @@ def read_data(images_file_name, images_true_labels, sep, sep2=', '):
     logger.info('Image array dimensions= {}', arr_tmp.shape)
     
     mrc.close()
-    
-    # Remove unknown complex for evaluation
-    for i, name in enumerate(gt_names):
-        if name == 'unk':
-            gt_names.pop(i)
-            gt_lines.pop(i)
 
     return data, gt_lines, gt_names
 
@@ -186,7 +186,7 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
         
         vectors = siamese_embedding(list_of_PIL_imgs)
         if combine_graph_flag:
-            graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
+            graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar','slicem_edge_list','')
             vectors = np.hstack((vectors,graph_vectors))
     elif embedding_model == 'slicem-graph-' + str(graph_embedding_method):
         vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
@@ -490,7 +490,7 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
     return eval_metrics_dict
 
 
-def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..'):
+def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clustering.txt'):
     '''
     Evaluate SLICEM clustering on synthetic dataset
     
@@ -508,7 +508,7 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
     else: # real 
         out_dir = 'data/real_dataset'     
 
-    SLICEM_labels_file =  '../' + out_dir + '/slicem_clustering.txt'
+    SLICEM_labels_file =  '../' + out_dir + '/' + file_name
 
     cluster_lines, cluster_numbers =  read_clusters(SLICEM_labels_file,sep)
     n_clus = len(cluster_lines)
@@ -758,13 +758,13 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
 def main():
     # Main driver
     
-    #out_dir_suffixes = ['_combined_externally','_combined_internally']
+    out_dir_suffixes = ['_combined_externally','_combined_internally']
     #out_dir_suffixes = [''] # experiment name     
-    out_dir_suffixes = ['_siamese_node_attribute_embedding'] # experiment name     
+    #out_dir_suffixes = ['_siamese_node_embedding'] # experiment name     
     
-    graph_embedding_method = ''
+    #graph_embedding_method = ''
     
-    #graph_embedding_methods = ['metapath2vec','wys','graphWave','node2vec']
+    graph_embedding_methods = ['metapath2vec','wys','graphWave','node2vec']
     
     
     #graph_embedding_method = 'metapath2vec'
@@ -774,7 +774,7 @@ def main():
     
     #embedding_methods = ['slicem-graph-' + graph_embedding_method for graph_embedding_method in graph_embedding_methods]
     
-    embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
+    #embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
     #embedding_methods = ['slicem-graph-' + graph_embedding_method]
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
@@ -782,18 +782,18 @@ def main():
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
     
     # Do the below when you want same image embedding for different graph embeddings
-    #embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
+    embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
     
     
     # Do the below when you want same graph embedding method for each image embedding
-    graph_embedding_methods = [graph_embedding_method for i in range(len(embedding_methods))]
+    # graph_embedding_methods = [graph_embedding_method for i in range(len(embedding_methods))]
     
     #clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     
     #datasets = ['real','synthetic']
-    datasets = ['real']
-    #datasets = ['synthetic']  
+    #datasets = ['real']
+    datasets = ['synthetic']  
     
     # Hyper-parameter ranges for cross-validation
     # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
@@ -899,7 +899,11 @@ def main():
                 
                 # Get graph embeddings and combine 
                 if combine_graph_flag:
-                    graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
+                    if graph_embedding_method in ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']:
+                        graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
+                    else:
+                        graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar','slicem_edge_list','')
+                        
                     graph_vectors = reduce_dimensions(graph_vectors)
                     
                     data_to_cluster = np.hstack((data_to_cluster,graph_vectors))  

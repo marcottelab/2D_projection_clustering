@@ -40,72 +40,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
     
 
-def run_deep_graph_infomax(
-    base_model, generator, epochs, reorder=lambda sequence, subjects: subjects
-):
-    corrupted_generator = CorruptedGenerator(generator)
-    gen = corrupted_generator.flow(G.nodes())
-    infomax = DeepGraphInfomax(base_model, corrupted_generator)
-
-    x_in, x_out = infomax.in_out_tensors()
-
-    model = Model(inputs=x_in, outputs=x_out)
-    model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer=Adam(lr=1e-3))
-    history = model.fit(gen, epochs=epochs, verbose=0, callbacks=[es])
-
-    x_emb_in, x_emb_out = base_model.in_out_tensors()
-    # for full batch models, squeeze out the batch dim (which is 1)
-    if generator.num_batch_dims() == 2:
-        x_emb_out = tf.squeeze(x_emb_out, axis=0)
-
-    emb_model = Model(inputs=x_emb_in, outputs=x_emb_out)
-
-    node_embeddings = emb_model.predict(fullbatch_generator.flow(G.nodes()))
-    node_ids = list(G.nodes())
-    return node_embeddings, node_ids
-
-
-def cluster_reorder(sequence, subjects):
-    # shuffle the subjects into the same order as the sequence yield
-    return subjects[sequence.node_order]
-
-embedding_to_combine = ''
-#dataset_type = 'synthetic'
-dataset_type = 'real'
-
-#combined_opts = [True,False]
-#combined = False
-combined = True
-#embedding_to_combine = 'densenet' 
-embedding_to_combine = 'siamese'
-
-graph_name_opts = ['top5_graph']
-#graph_name_opts = ['all_neigs_graph','top5_graph','top5_graph_unnorm']
-
-#graph_name = 'top5_graph'
-
-for graph_name in graph_name_opts:
-    with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','rb') as f:    
-        g = nx.read_weighted_edgelist(f)
-    
-    if combined:
-        # Read image node embeddings as features
-        if dataset_type == 'real':
-            if embedding_to_combine == 'siamese':
-                with open('../results/real_siamese_transferred/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
-                    image_embeddings = np.load(f)
-            else:
-                with open('../results/real_original_replicate/densenet/densenet_reduced_embeddings.npy', 'rb') as f:
-                    image_embeddings = np.load(f)
-        else: # synthetic
-            with open('../results/synthetic_original_replicate/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
-                image_embeddings = np.load(f)
-                
-        node_data = pd.DataFrame(image_embeddings,index=[str(num) for num in range(len(image_embeddings))])
-        G = StellarGraph.from_networkx(g, node_features=node_data)
-    else:
-        G = StellarGraph.from_networkx(g)
-    
+def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type):
     print(G.info())
     
     #node_embedding_method = 'node2vec'
@@ -378,7 +313,9 @@ for graph_name in graph_name_opts:
             node_gen = Attri2VecNodeGenerator(G, batch_size).flow(node_ids)
             node_embeddings = embedding_model.predict(node_gen, workers=1, verbose=1)
         elif node_embedding_method == 'gcn':
-        
+            from tensorflow.keras import Model
+            import tensorflow as tf
+
             fullbatch_generator = FullBatchNodeGenerator(G, sparse=False)
             gcn_model = GCN(layer_sizes=[128], activations=["relu"], generator=fullbatch_generator)
             
@@ -410,7 +347,7 @@ for graph_name in graph_name_opts:
             cluster_gcn_model = GCN(
                 layer_sizes=[128], activations=["relu"], generator=cluster_generator
             )
-            node_embeddings, node_ids = run_deep_graph_infomax(
+            node_embeddings, node_ids = run_deep_graph_infomax(es, fullbatch_generator,
                 cluster_gcn_model, cluster_generator, epochs=epochs, reorder=cluster_reorder
             )    
         elif node_embedding_method == 'gat':
@@ -419,14 +356,14 @@ for graph_name in graph_name_opts:
             fullbatch_generator = FullBatchNodeGenerator(G, sparse=False)
             gat_model = GAT(
             layer_sizes=[128], activations=["relu"], generator=fullbatch_generator, attn_heads=8,)
-            node_embeddings, node_ids = run_deep_graph_infomax(gat_model, fullbatch_generator, epochs=epochs)
+            node_embeddings, node_ids = run_deep_graph_infomax(es, fullbatch_generator,gat_model, fullbatch_generator, epochs=epochs)
         elif node_embedding_method == 'APPNP':
             epochs = 100
             es = EarlyStopping(monitor="loss", min_delta=0, patience=20)
             fullbatch_generator = FullBatchNodeGenerator(G, sparse=False)
             appnp_model = APPNP(
             layer_sizes=[128], activations=["relu"], generator=fullbatch_generator)
-            node_embeddings, node_ids = run_deep_graph_infomax(appnp_model, fullbatch_generator, epochs=epochs)
+            node_embeddings, node_ids = run_deep_graph_infomax(es, fullbatch_generator, appnp_model, fullbatch_generator, epochs=epochs)
         elif node_embedding_method == 'graphSage_dgi':
             epochs = 100
             fullbatch_generator = FullBatchNodeGenerator(G, sparse=False)
@@ -434,12 +371,97 @@ for graph_name in graph_name_opts:
             graphsage_generator = GraphSAGENodeGenerator(G, batch_size=1000, num_samples=[5])
             graphsage_model = GraphSAGE(
                 layer_sizes=[128], activations=["relu"], generator=graphsage_generator)
-            node_embeddings, node_ids = run_deep_graph_infomax(
+            node_embeddings, node_ids = run_deep_graph_infomax(es, fullbatch_generator,
                 graphsage_model, graphsage_generator, epochs=epochs)
     
         # Write node embeddings to file
-        with open('../data/' + dataset_type + '_dataset/' + graph_name + '_stellar_' + node_embedding_method + embedding_to_combine + '.npy', 'wb') as f:
+        with open('../data/' + dataset_type + '_dataset/graph_embeddings/' + graph_name + graph_type + '_stellar_' + node_embedding_method + embedding_to_combine + '.npy', 'wb') as f:
             np.save(f, node_embeddings)
             
-        with open('../data/' + dataset_type + '_dataset/' + graph_name + '_stellar_' + node_embedding_method+ embedding_to_combine + '_node_ids.list', 'wb') as f:
-            pkl_dump(node_ids,f)
+        with open('../data/' + dataset_type + '_dataset/graph_embeddings/' + graph_name + graph_type + '_stellar_' + node_embedding_method+ embedding_to_combine + '_node_ids.list', 'wb') as f:
+            pkl_dump(node_ids,f)    
+            
+def run_deep_graph_infomax(es, fullbatch_generator,
+    base_model, generator, epochs, reorder=lambda sequence, subjects: subjects
+):
+    corrupted_generator = CorruptedGenerator(generator)
+    gen = corrupted_generator.flow(G.nodes())
+    infomax = DeepGraphInfomax(base_model, corrupted_generator)
+
+    x_in, x_out = infomax.in_out_tensors()
+
+    model = Model(inputs=x_in, outputs=x_out)
+    model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer=Adam(lr=1e-3))
+    history = model.fit(gen, epochs=epochs, verbose=0, callbacks=[es])
+
+    x_emb_in, x_emb_out = base_model.in_out_tensors()
+    # for full batch models, squeeze out the batch dim (which is 1)
+    if generator.num_batch_dims() == 2:
+        x_emb_out = tf.squeeze(x_emb_out, axis=0)
+
+    emb_model = Model(inputs=x_emb_in, outputs=x_emb_out)
+
+    node_embeddings = emb_model.predict(fullbatch_generator.flow(G.nodes()))
+    node_ids = list(G.nodes())
+    return node_embeddings, node_ids
+
+
+def cluster_reorder(sequence, subjects):
+    # shuffle the subjects into the same order as the sequence yield
+    return subjects[sequence.node_order]
+
+
+#dataset_type = 'synthetic'
+dataset_type = 'real'
+
+combined_opts = [True,False]
+#combined = False
+#combined = True
+#embedding_to_combine = 'densenet' 
+#embedding_to_combine = 'siamese'
+# embeddings_to_combine = ['siamese']
+embeddings_to_combine = ['densenet','siamese','vgg','alexnet']
+
+#graph_name_opts = ['slicem_edge_list']
+graph_name_opts = ['slicem_edge_list_l1']
+
+#graph_type = 'directed'
+graph_types = ['directed','undirected']
+#graph_name_opts = ['all_neigs_graph','top5_graph','top5_graph_unnorm']
+
+#graph_name = 'top5_graph'
+
+for graph_name in graph_name_opts:
+    for graph_type in graph_types:
+        with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','rb') as f:    
+            if graph_type == 'directed':
+                g = nx.read_weighted_edgelist(f, create_using=nx.DiGraph())
+            else:
+                g = nx.read_weighted_edgelist(f)
+                
+        for combined in combined_opts:
+            if combined:
+                # Read image node embeddings as features
+                for embedding_to_combine in embeddings_to_combine:
+                    if dataset_type == 'real':
+                        if embedding_to_combine == 'siamese':
+                            with open('../results/real_siamese_transferred/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
+                                image_embeddings = np.load(f)
+                        else:
+                            with open('../results/real_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                image_embeddings = np.load(f)
+                             
+                    else: # synthetic
+                        with open('../results/synthetic_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                            image_embeddings = np.load(f)
+                            
+                    node_data = pd.DataFrame(image_embeddings,index=[str(num) for num in range(len(image_embeddings))])
+                    G = StellarGraph.from_networkx(g, node_features=node_data)
+                    get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type)
+                    
+            else:
+                embedding_to_combine = ''
+                G = StellarGraph.from_networkx(g)
+                
+                get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type)
+            
