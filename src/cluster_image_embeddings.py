@@ -169,7 +169,7 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
     #list_of_PIL_imgs = [Image.fromarray(myarray,'RGB') for myarray in data] 
     
     # Initialize Img2Vec
-    if embedding_model in ['alexnet', 'vgg','densenet','resnet-18']:
+    if embedding_model in ['alexnet', 'vgg','densenet','resnet-18','efficientnet_b1','efficientnet_b7']:
         img2vec = Img2Vec(model=embedding_model)     
         vectors = img2vec.get_vec(list_of_PIL_imgs)
         
@@ -180,8 +180,10 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
             logger.info('Stacked image + graph embedding array shape: {}',np.shape(vectors))
             
     elif embedding_model == 'siamese':
-        correct_dims = (350, 350)
-        if dataset == 'real': # Resize to correct input dimensions
+        correct_dims = (100, 100)
+        #correct_dims = (350, 350)
+        #if dataset == 'real': # Resize to correct input dimensions
+        if dataset == 'real' or dataset == 'synthetic': # Resize to correct input dimensions
             list_of_PIL_imgs = [im1.resize(correct_dims) for im1 in list_of_PIL_imgs]
         
         vectors = siamese_embedding(list_of_PIL_imgs)
@@ -505,6 +507,8 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
     '''
     if dataset == 'synthetic':
         out_dir = 'data/synthetic_dataset'        
+    elif dataset == 'synthetic_more_projs':
+        out_dir = 'data/synthetic_more_projections'        
     else: # real 
         out_dir = 'data/real_dataset'     
 
@@ -759,8 +763,8 @@ def main():
     # Main driver
     
     #out_dir_suffixes = ['_combined_externally','_combined_internally']
-    #out_dir_suffixes = [''] # experiment name     
-    out_dir_suffixes = ['_siamese_node_attribute_embedding'] # experiment name     
+    out_dir_suffixes = [''] # experiment name     
+    #out_dir_suffixes = ['_siamese_node_attribute_embedding'] # experiment name     
     
     graph_embedding_method = ''
     
@@ -774,12 +778,13 @@ def main():
     
     #embedding_methods = ['slicem-graph-' + graph_embedding_method for graph_embedding_method in graph_embedding_methods]
     
-    embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
+    #embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
     #embedding_methods = ['slicem-graph-' + graph_embedding_method]
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
-    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
+    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7']
+    embedding_methods = ['siamese','efficientnet_b1','efficientnet_b7']
     
     # Do the below when you want same image embedding for different graph embeddings
     #embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
@@ -794,7 +799,8 @@ def main():
     #datasets = ['real','synthetic']
     datasets = ['real']
     #datasets = ['synthetic']  
-    
+    #datasets = ['synthetic_more_projs']
+
     # Hyper-parameter ranges for cross-validation
     # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
     #cluster_hyper_param_ranges = {"DBSCAN": {"eps":"infer","min_samples":range(2,10)}}
@@ -878,7 +884,8 @@ def main():
                 f.writelines([' '.join(list(comp)) + '\n' for comp in train_clusters])
             with open(results_dir+ '/test_clusters.txt','w') as f:
                 f.writelines([' '.join(list(comp)) + '\n' for comp in test_clusters])            
-            
+            logger.info(sep)
+            eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
             for i,embedding_method in enumerate(embedding_methods):
                 graph_embedding_method = graph_embedding_methods[i]
                 # Skip siamese for real dataset 
@@ -974,7 +981,6 @@ def main():
                     test_results_df = test_results_df.append(pd.Series(test_eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) + ' embedding ' +  str(clustering_method) + ' clustering'))
     
                     
-            eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
             results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
                 
             #results_df.sort_values(by='No. of clusters',key=lambda x: abs(x-n_true_clusters),inplace=True)
