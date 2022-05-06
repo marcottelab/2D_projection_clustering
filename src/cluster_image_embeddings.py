@@ -136,7 +136,7 @@ def read_data(images_file_name, images_true_labels, sep, sep2=', '):
     return data, gt_lines, gt_names
 
 
-def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,graph_embedding_method='',dataset='real'):  
+def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,graph_embedding_method='',dataset='real',graph_name='slicem_edge_list',graph_type='directed',node_attribute_method='siamese'):  
     '''
     Get vector embeddings for each image in the data using a neural network model from img2vec
     
@@ -169,29 +169,33 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
     #list_of_PIL_imgs = [Image.fromarray(myarray,'RGB') for myarray in data] 
     
     # Initialize Img2Vec
-    if embedding_model in ['alexnet', 'vgg','densenet','resnet-18']:
+    if embedding_model in ['alexnet', 'vgg','densenet','resnet-18','efficientnet_b1','efficientnet_b7']:
         img2vec = Img2Vec(model=embedding_model)     
         vectors = img2vec.get_vec(list_of_PIL_imgs)
         
         if combine_graph_flag:
-            graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
+            graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar',graph_name,'',graph_type)
             
             vectors = np.hstack((vectors,graph_vectors))
             logger.info('Stacked image + graph embedding array shape: {}',np.shape(vectors))
             
-    elif embedding_model == 'siamese':
-        correct_dims = (350, 350)
-        if dataset == 'real': # Resize to correct input dimensions
+    elif embedding_model in ['siamese','siamese_more_projs_all']:
+        if embedding_model == 'siamese':
+            correct_dims = (350, 350)
+        else:
+            correct_dims = (100, 100)
+        #if dataset == 'real': # Resize to correct input dimensions
+        if dataset == 'real' or dataset == 'synthetic': # Resize to correct input dimensions        
             list_of_PIL_imgs = [im1.resize(correct_dims) for im1 in list_of_PIL_imgs]
         
-        vectors = siamese_embedding(list_of_PIL_imgs)
+        vectors = siamese_embedding(list_of_PIL_imgs, embedding_model)
         if combine_graph_flag:
-            graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar','slicem_edge_list','')
+            graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar',graph_name,'',graph_type)
             vectors = np.hstack((vectors,graph_vectors))
     elif embedding_model == 'slicem-graph-' + str(graph_embedding_method):
-        vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
+        vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar',graph_name,'',graph_type)
     elif embedding_model in ['graphSage','attri2vec','gcn','cluster_gcn','gat','APPNP']:
-        vectors = slicem_graph_embeddings(dataset,embedding_model)
+        vectors = slicem_graph_embeddings(dataset,embedding_model,'stellar',graph_name,node_attribute_method,graph_type)
     else:
         logger.error('Embedding model not found. Returning flattened images')
         vectors = data.flatten().reshape(100,96*96)  # Just flattened data: Check if correct
@@ -626,7 +630,7 @@ def make_generator(parameters):
                 yield temp_res
         
         
-def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_cluster,image_wise_cluster_labels,index_start,embedding_method,gt_lines,gt_names,n_true_clusters,out_dir_orig,dataset,dist_metric='',main_results_dir='../results',graph_embedding_method = ''):
+def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_cluster,image_wise_cluster_labels,index_start,embedding_method,gt_lines,gt_names,n_true_clusters,out_dir_orig,dataset,dist_metric='',main_results_dir='../results',graph_embedding_method = '',node_attribute_method=''):
     '''
     
     Find best clustering algorithm and hyperparameters using the provided methods and ranges, evaluated on the training set
@@ -687,7 +691,7 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
                 ca = AffinityPropagation( **params )
                 
             logger.info(ca)
-            out_dir_emb = out_dir_orig + '/'+embedding_method + str(graph_embedding_method)
+            out_dir_emb = out_dir_orig + '/'+embedding_method + str(graph_embedding_method)+node_attribute_method
             
             cluster_method_str = method + '_'  
             for param,value in params.items():
@@ -731,7 +735,7 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
                     pkl.dump(eval_metrics_dict,f)
             if len(results_df) == 0:
                 results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
-            results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) +' embedding ' +  cluster_method_str + ' clustering'))
+            results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) + ' '+ node_attribute_method + ' embedding ' +  cluster_method_str + ' clustering'))
 
     if ('MMR F1 score' in eval_metrics_dict):
         results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)
@@ -758,6 +762,15 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
 def main():
     # Main driver
     
+    #graph_name = 'slicem_edge_list_l1'
+    #graph_name = 'slicem_edge_list_euclidean'
+    graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
+    graph_types = ['undirected','directed']
+    # graph_type = 'undirected'
+
+    all_combinations = True
+    #all_combinations = False
+
     out_dir_suffixes = ['_combined_externally','_combined_internally']
     #out_dir_suffixes = [''] # experiment name     
     #out_dir_suffixes = ['_siamese_node_embedding'] # experiment name     
@@ -765,7 +778,6 @@ def main():
     #graph_embedding_method = ''
     
     graph_embedding_methods = ['metapath2vec','wys','graphWave','node2vec']
-    
     
     #graph_embedding_method = 'metapath2vec'
     #graph_embedding_method = 'wys'
@@ -775,25 +787,41 @@ def main():
     #embedding_methods = ['slicem-graph-' + graph_embedding_method for graph_embedding_method in graph_embedding_methods]
     
     #embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
+    #node_attribute_methods = ['densenet','siamese','vgg','alexnet']
+    #node_attribute_methods = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
+    
+    node_attribute_methods = ['']
+    
     #embedding_methods = ['slicem-graph-' + graph_embedding_method]
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
-    
-    # Do the below when you want same image embedding for different graph embeddings
-    embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
+    embedding_methods = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
     
     
     # Do the below when you want same graph embedding method for each image embedding
-    # graph_embedding_methods = [graph_embedding_method for i in range(len(embedding_methods))]
+    #graph_embedding_methods = [graph_embedding_method for i in range(len(embedding_methods))]
+ 
+    if all_combinations:
+        n_emb = len(embedding_methods)
+        n_graph_emb = len(graph_embedding_methods)
+        
+        graph_embedding_methods = graph_embedding_methods*n_emb
+        embedding_methods = list(np.repeat(embedding_methods,n_graph_emb))
+            
     
+    # Do the below when you want same image embedding for different graph embeddings
+    # embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
+    
+    
+   
     #clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     
     #datasets = ['real','synthetic']
-    #datasets = ['real']
-    datasets = ['synthetic']  
+    datasets = ['real']
+    #datasets = ['synthetic']  
     
     # Hyper-parameter ranges for cross-validation
     # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
@@ -824,179 +852,191 @@ def main():
     #main_results_dir = '.'
     main_results_dir = '../results'
     
-    config = dict()
-
-     
-    if not os.path.exists(main_results_dir):
-        os.mkdir(main_results_dir)
+    for graph_name in graph_names:
+        for graph_type in graph_types:
+            # experiment_name = ''
+            if graph_name == 'slicem_edge_list_l1':
+                graph_name_exp = 'slicem_l1'
+            elif graph_name == 'slicem_edge_list_euclidean':
+                graph_name_exp = 'slicem_l2'
+                
+            experiment_name = graph_name_exp + '_' + graph_type    
+            
+            config = dict()
         
-    for out_dir_suffix in out_dir_suffixes:
-        if out_dir_suffix == '_combined_internally':        
-            combine_graph_flag = 0
-            combine_graph_flag_internal= 1
-        elif out_dir_suffix == '_combined_externally':
-            combine_graph_flag = 1            
-            combine_graph_flag_internal=0    
-        else:
-            combine_graph_flag = 0            
-            combine_graph_flag_internal=0               
-            
-        for var in [combine_graph_flag,combine_graph_flag_internal,graph_embedding_methods,embedding_methods,datasets,cluster_hyper_param_ranges,main_results_dir]:
-            my_var_name = [ k for k,v in locals().items() if v is var][0]
-            config[my_var_name] = var            
-    
-        for dataset in datasets:
-            images_file_name,images_true_labels,sep,index_start,out_dir_orig,sep2 = get_config(dataset)
-            out_dir_orig = out_dir_orig + out_dir_suffix
-    
-            for var in [images_file_name,images_true_labels,sep,index_start,out_dir_orig]:
-                my_var_name = [ k for k,v in locals().items() if v is var][0]
-                config[my_var_name] = var      
-            
-            results_dir = main_results_dir + '/' + out_dir_orig
-            if not os.path.exists(results_dir):
-                os.mkdir(results_dir)
+             
+            if not os.path.exists(main_results_dir):
+                os.mkdir(main_results_dir)
                 
-            with open(results_dir + "/config.yaml", 'a+') as outfile:
-                yaml_dump(config, outfile, default_flow_style=False)               
-                
-            # Setting logger
-            logger.add(results_dir + '/log_file.txt',level="INFO")
-                
-            data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep, sep2)
-            n_true_clusters = len(gt_lines)
+            for out_dir_suffix in out_dir_suffixes:
+                if out_dir_suffix == '_combined_internally':        
+                    combine_graph_flag = 0
+                    combine_graph_flag_internal= 1
+                elif out_dir_suffix == '_combined_externally':
+                    combine_graph_flag = 1            
+                    combine_graph_flag_internal=0    
+                else:
+                    combine_graph_flag = 0            
+                    combine_graph_flag_internal=0               
                     
-            results_df = pd.DataFrame()
-            test_results_df = pd.DataFrame()
+                for var in [combine_graph_flag,combine_graph_flag_internal,graph_embedding_methods,embedding_methods,datasets,cluster_hyper_param_ranges,main_results_dir]:
+                    my_var_name = [ k for k,v in locals().items() if v is var][0]
+                    config[my_var_name] = var            
             
-            embedding_eval_df = pd.DataFrame()
+                for dataset in datasets:
+                    images_file_name,images_true_labels,sep,index_start,out_dir_orig,sep2 = get_config(dataset)
+                    out_dir_orig = out_dir_orig + out_dir_suffix + '_'+experiment_name
             
-            # Split into train and test sets
-            
-            train_cluster_inds, test_cluster_inds, train_clusters, test_clusters = train_test_split_complexes(gt_lines)
-            with open(results_dir + '/train_clusters.txt','w') as f:
-                f.writelines([' '.join(list(comp)) + '\n' for comp in train_clusters])
-            with open(results_dir+ '/test_clusters.txt','w') as f:
-                f.writelines([' '.join(list(comp)) + '\n' for comp in test_clusters])            
-            
-            for i,embedding_method in enumerate(embedding_methods):
-                graph_embedding_method = graph_embedding_methods[i]
-                # Skip siamese for real dataset 
-                # if dataset == 'real' and embedding_method == 'siamese':
-                #     continue
-                
-                logger.info(embedding_method)
-                out_dir_emb = out_dir_orig + '/'+embedding_method + str(graph_embedding_method)
-                if not os.path.exists(main_results_dir + '/' + out_dir_emb):
-                    os.mkdir(main_results_dir + '/' + out_dir_emb)
-                data_to_cluster = get_image_embedding(data,embedding_method,combine_graph_flag_internal,graph_embedding_method,dataset)
-                
-                data_to_cluster = reduce_dimensions(data_to_cluster)
-                
-                # Save reduced dimension embeddings of the images 
-                with open(main_results_dir + '/' + out_dir_emb + '/' + embedding_method + '_reduced_embeddings.npy', 'wb') as f:
-                    np.save(f, data_to_cluster)
-                
-                # Get graph embeddings and combine 
-                if combine_graph_flag:
-                    if graph_embedding_method in ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']:
-                        graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method)
-                    else:
-                        graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar','slicem_edge_list','')
+                    for var in [images_file_name,images_true_labels,sep,index_start,out_dir_orig]:
+                        my_var_name = [ k for k,v in locals().items() if v is var][0]
+                        config[my_var_name] = var      
+                    
+                    results_dir = main_results_dir + '/' + out_dir_orig
+                    if not os.path.exists(results_dir):
+                        os.mkdir(results_dir)
                         
-                    graph_vectors = reduce_dimensions(graph_vectors)
-                    
-                    data_to_cluster = np.hstack((data_to_cluster,graph_vectors))  
-                
-                image_wise_cluster_labels = get_image_wise_cluster_labels(data_to_cluster,gt_lines,index_start)
-                
-                train_image_wise_cluster_labels, train_vectors, test_image_wise_cluster_labels, test_vectors, train_images_orig_names, test_images_orig_names = get_train_images(image_wise_cluster_labels,train_cluster_inds,data_to_cluster,index_start)
-                
-                train_cluster_names = [gt_names[ind] for ind in train_cluster_inds]
-                test_cluster_names = [gt_names[ind] for ind in test_cluster_inds]
-                
-                train_cluster_array = np.vstack(train_vectors)
-                test_cluster_array = np.vstack(test_vectors)
+                    with open(results_dir + "/config.yaml", 'a+') as outfile:
+                        yaml_dump(config, outfile, default_flow_style=False)               
+                        
+                    # Setting logger
+                    logger.add(results_dir + '/log_file.txt',level="INFO")
+                        
+                    data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep, sep2)
+                    n_true_clusters = len(gt_lines)
                             
-                silhouette_dict_full = evaluate_embeddings(data_to_cluster, image_wise_cluster_labels)
-                
-                silhouette_dict = evaluate_embeddings(train_vectors, train_image_wise_cluster_labels)
-                
-                if len(embedding_eval_df) == 0:
-                    embedding_eval_df = pd.DataFrame(columns = silhouette_dict.keys())    
+                    results_df = pd.DataFrame()
+                    test_results_df = pd.DataFrame()
                     
-                embedding_eval_df = embedding_eval_df.append(pd.Series(silhouette_dict,name = embedding_method + ' ' + str(graph_embedding_method)+ ' with train data'))
-                embedding_eval_df = embedding_eval_df.append(pd.Series(silhouette_dict_full,name = embedding_method+ ' ' + str(graph_embedding_method) + ' with full data'))
-    
-                # Plot TSNEs
-                try:
-                    plot_tsne(data_to_cluster,out_dir_emb,image_wise_cluster_labels, silhouette_dict['max_silhouette_distance'] ,main_results_dir)                
-                except: # Add traceback
-                    logger.error('ERROR in tsne plot')
+                    embedding_eval_df = pd.DataFrame()
+                    
+                    # Split into train and test sets
+                    
+                    train_cluster_inds, test_cluster_inds, train_clusters, test_clusters = train_test_split_complexes(gt_lines)
+                    with open(results_dir + '/train_clusters.txt','w') as f:
+                        f.writelines([' '.join(list(comp)) + '\n' for comp in train_clusters])
+                    with open(results_dir+ '/test_clusters.txt','w') as f:
+                        f.writelines([' '.join(list(comp)) + '\n' for comp in test_clusters])            
+                    
+                    for i,embedding_method in enumerate(embedding_methods):
+                        graph_embedding_method = graph_embedding_methods[i]
+                        logger.info(embedding_method)
+                            
+                        # Skip siamese for real dataset 
+                        # if dataset == 'real' and embedding_method == 'siamese':
+                        #     continue                        
+                        for node_attribute_method in node_attribute_methods:
+                            out_dir_emb = out_dir_orig + '/'+embedding_method + str(graph_embedding_method)+node_attribute_method
+                            if not os.path.exists(main_results_dir + '/' + out_dir_emb):
+                                os.mkdir(main_results_dir + '/' + out_dir_emb)
+                            data_to_cluster = get_image_embedding(data,embedding_method,combine_graph_flag_internal,graph_embedding_method,dataset,graph_name,graph_type,node_attribute_method)
+                            
+                            data_to_cluster = reduce_dimensions(data_to_cluster)
+                            
+                            # Save reduced dimension embeddings of the images 
+                            with open(main_results_dir + '/' + out_dir_emb + '/' + embedding_method + '_reduced_embeddings.npy', 'wb') as f:
+                                np.save(f, data_to_cluster)
+                            
+                            # Get graph embeddings and combine 
+                            if combine_graph_flag:
+                                if graph_embedding_method in ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']:
+                                    graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar',graph_name,'siamese',graph_type)
+                                else:
+                                    graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar',graph_name,'',graph_type)
+                                    
+                                graph_vectors = reduce_dimensions(graph_vectors)
+                                
+                                data_to_cluster = np.hstack((data_to_cluster,graph_vectors))  
+                            
+                            image_wise_cluster_labels = get_image_wise_cluster_labels(data_to_cluster,gt_lines,index_start)
+                            
+                            train_image_wise_cluster_labels, train_vectors, test_image_wise_cluster_labels, test_vectors, train_images_orig_names, test_images_orig_names = get_train_images(image_wise_cluster_labels,train_cluster_inds,data_to_cluster,index_start)
+                            
+                            train_cluster_names = [gt_names[ind] for ind in train_cluster_inds]
+                            test_cluster_names = [gt_names[ind] for ind in test_cluster_inds]
+                            
+                            train_cluster_array = np.vstack(train_vectors)
+                            test_cluster_array = np.vstack(test_vectors)
+                                        
+                            silhouette_dict_full = evaluate_embeddings(data_to_cluster, image_wise_cluster_labels)
+                            
+                            silhouette_dict = evaluate_embeddings(train_vectors, train_image_wise_cluster_labels)
+                            
+                            if len(embedding_eval_df) == 0:
+                                embedding_eval_df = pd.DataFrame(columns = silhouette_dict.keys())    
+                                
+                            embedding_eval_df = embedding_eval_df.append(pd.Series(silhouette_dict,name = embedding_method + ' ' + str(graph_embedding_method)+ ' with train data'))
+                            embedding_eval_df = embedding_eval_df.append(pd.Series(silhouette_dict_full,name = embedding_method+ ' ' + str(graph_embedding_method) + ' with full data'))
                 
-                # Set distance threshold based on PCA variance
+                            # Plot TSNEs
+                            try:
+                                plot_tsne(data_to_cluster,out_dir_emb,image_wise_cluster_labels, silhouette_dict['max_silhouette_distance'] ,main_results_dir)                
+                            except Exception as e: # Add traceback
+                                logger.error('ERROR in tsne plot:')
+                                logger.error(str(e))
+                            
+                            # Set distance threshold based on PCA variance
+                            
+                            # Training clustering hyper parameters using training data
+                            
+                            best_method,best_method_name = cluster_hyperparameter_optimization(cluster_hyper_param_ranges,train_cluster_array,train_image_wise_cluster_labels,index_start,embedding_method,train_clusters,train_cluster_names,n_true_clusters,out_dir_orig,dataset,silhouette_dict['max_silhouette_distance'],main_results_dir,graph_embedding_method,node_attribute_method)
                 
-                # Training clustering hyper parameters using training data
+                            # Final clustering on full data using the best method and parameters
+                            best_clustering_methods = [(best_method,best_method_name)]
+                            
+                            for clustering_method_tup in best_clustering_methods:
+                                clustering_method,clustering_method_name = clustering_method_tup
+                                clustering_method_name = clustering_method_name.split('embedding')[1].split('clustering')[0].rstrip()
+                                out_dir = out_dir_emb + '/'+str(clustering_method_name)  
+                                if not os.path.exists(main_results_dir + '/' + out_dir):
+                                    os.mkdir(main_results_dir + '/' + out_dir)
+                                    
+                                #cluster_hyperparameter_optimization_clusteval(data_to_cluster,clustering_method)
+                                                 
+                                n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(data_to_cluster,clustering_method,index_start,silhouette_dict['max_silhouette_distance'])
+                                write_clusters(clusterwise_indices_str,'',out_dir,main_results_dir)                
+                                
+                                # On full data
+                                eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,'',out_dir,n_true_clusters,gt_names,main_results_dir)
+                                eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
+                                eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
+                                eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin
+                                
+                                if len(results_df) == 0:
+                                    results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
+                                results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) +' '+ node_attribute_method +  ' embedding ' +  str(clustering_method) + ' clustering'))
+                                
+                                # On test data
+                                n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(test_cluster_array,clustering_method,index_start,silhouette_dict['max_silhouette_distance'],test_images_orig_names)
+                                
+                                test_eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,test_clusters,n_clus,'test',out_dir,len(test_clusters),test_cluster_names,main_results_dir)
+                                test_eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
+                                test_eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
+                                test_eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin
+                                
+                                if len(results_df) == 0:
+                                    test_results_df = pd.DataFrame(columns = test_eval_metrics_dict.keys())
+                                test_results_df = test_results_df.append(pd.Series(test_eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) +' '+ node_attribute_method +  ' embedding ' +  str(clustering_method) + ' clustering'))
                 
-                best_method,best_method_name = cluster_hyperparameter_optimization(cluster_hyper_param_ranges,train_cluster_array,train_image_wise_cluster_labels,index_start,embedding_method,train_clusters,train_cluster_names,n_true_clusters,out_dir_orig,dataset,silhouette_dict['max_silhouette_distance'],main_results_dir,graph_embedding_method)
-    
-                # Final clustering on full data using the best method and parameters
-                best_clustering_methods = [(best_method,best_method_name)]
-                
-                for clustering_method_tup in best_clustering_methods:
-                    clustering_method,clustering_method_name = clustering_method_tup
-                    clustering_method_name = clustering_method_name.split('embedding')[1].split('clustering')[0].rstrip()
-                    out_dir = out_dir_emb + '/'+str(clustering_method_name)  
-                    if not os.path.exists(main_results_dir + '/' + out_dir):
-                        os.mkdir(main_results_dir + '/' + out_dir)
+                                
+                    eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
+                    results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
                         
-                    #cluster_hyperparameter_optimization_clusteval(data_to_cluster,clustering_method)
-                                     
-                    n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(data_to_cluster,clustering_method,index_start,silhouette_dict['max_silhouette_distance'])
-                    write_clusters(clusterwise_indices_str,'',out_dir,main_results_dir)                
+                    #results_df.sort_values(by='No. of clusters',key=lambda x: abs(x-n_true_clusters),inplace=True)
+                    #results_df.sort_values(by='3 F1 score average',ascending=False,inplace=True)
+                    if ('MMR F1 score' in eval_metrics_dict):
+                        results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)
+                        
+                    if ('MMR F1 score' in test_eval_metrics_dict):
+                        test_results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)            
+                        
+                    # check results stability
                     
-                    # On full data
-                    eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,gt_lines,n_clus,'',out_dir,n_true_clusters,gt_names,main_results_dir)
-                    eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
-                    eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
-                    eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin
+                    embedding_eval_df.to_csv(main_results_dir + '/' + out_dir_orig + '/evaluating_embeddings_' + dataset + '.csv')
                     
-                    if len(results_df) == 0:
-                        results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
-                    results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) + ' embedding ' +  str(clustering_method) + ' clustering'))
+                    test_results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/compiled_test_results_all_methods_sorted_' + dataset + '.csv')
                     
-                    # On test data
-                    n_clus, clusterwise_indices_str,unsupervised_score_silhouette,unsupervised_score_calinski_harabasz, unsupervised_score_davies_bouldin = cluster_data(test_cluster_array,clustering_method,index_start,silhouette_dict['max_silhouette_distance'],test_images_orig_names)
-                    
-                    test_eval_metrics_dict = evaluate_clusters(clusterwise_indices_str,test_clusters,n_clus,'test',out_dir,len(test_clusters),test_cluster_names,main_results_dir)
-                    test_eval_metrics_dict['Silhouette score'] = unsupervised_score_silhouette
-                    test_eval_metrics_dict['Calinski-Harabasz score'] = unsupervised_score_calinski_harabasz
-                    test_eval_metrics_dict['Davies-Bouldin score'] = unsupervised_score_davies_bouldin
-                    
-                    if len(results_df) == 0:
-                        test_results_df = pd.DataFrame(columns = test_eval_metrics_dict.keys())
-                    test_results_df = test_results_df.append(pd.Series(test_eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) + ' embedding ' +  str(clustering_method) + ' clustering'))
+                    results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/compiled_results_all_methods_sorted_' + dataset + '.csv')
     
-                    
-            eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
-            results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
-                
-            #results_df.sort_values(by='No. of clusters',key=lambda x: abs(x-n_true_clusters),inplace=True)
-            #results_df.sort_values(by='3 F1 score average',ascending=False,inplace=True)
-            if ('MMR F1 score' in eval_metrics_dict):
-                results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)
-                
-            if ('MMR F1 score' in test_eval_metrics_dict):
-                test_results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)            
-                
-            # check results stability
-            
-            embedding_eval_df.to_csv(main_results_dir + '/' + out_dir_orig + '/evaluating_embeddings_' + dataset + '.csv')
-            
-            test_results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/compiled_test_results_all_methods_sorted_' + dataset + '.csv')
-            
-            results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/compiled_results_all_methods_sorted_' + dataset + '.csv')
-
         
-if __name__ == "__main__":
+if __name__ == "__main__":    
     main()

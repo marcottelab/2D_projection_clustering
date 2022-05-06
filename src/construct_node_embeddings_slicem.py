@@ -375,6 +375,7 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
                 graphsage_model, graphsage_generator, epochs=epochs)
     
         # Write node embeddings to file
+        import numpy as np
         with open('../data/' + dataset_type + '_dataset/graph_embeddings/' + graph_name + graph_type + '_stellar_' + node_embedding_method + embedding_to_combine + '.npy', 'wb') as f:
             np.save(f, node_embeddings)
             
@@ -414,16 +415,24 @@ def cluster_reorder(sequence, subjects):
 #dataset_type = 'synthetic'
 dataset_type = 'real'
 
-combined_opts = [True,False]
+#combined_opts = [True,False]
+#combined_opts = [False]
+combined_opts = [True]
+
+
 #combined = False
 #combined = True
 #embedding_to_combine = 'densenet' 
 #embedding_to_combine = 'siamese'
 # embeddings_to_combine = ['siamese']
-embeddings_to_combine = ['densenet','siamese','vgg','alexnet']
+#embeddings_to_combine = ['densenet','siamese','vgg','alexnet']
+embeddings_to_combine = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
+
 
 #graph_name_opts = ['slicem_edge_list']
-graph_name_opts = ['slicem_edge_list_l1']
+#graph_name_opts = ['slicem_edge_list_l1']
+graph_name_opts = ['slicem_edge_list_euclidean','slicem_edge_list_l1']
+
 
 #graph_type = 'directed'
 graph_types = ['directed','undirected']
@@ -447,6 +456,12 @@ for graph_name in graph_name_opts:
                         if embedding_to_combine == 'siamese':
                             with open('../results/real_siamese_transferred/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)
+                        elif embedding_to_combine == 'siamese_more_projs_all':
+                            with open('../results/real_siamese_more_projs_all_efficientnet/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
+                                image_embeddings = np.load(f) 
+                        elif embedding_to_combine in ['efficientnet_b1','efficientnet_b7']:
+                            with open('../results/real_siamese_more_projs_all_efficientnet/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                image_embeddings = np.load(f)    
                         else:
                             with open('../results/real_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)

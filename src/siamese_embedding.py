@@ -11,7 +11,7 @@ import numpy as np
 import tensorflow as tf
 
 
-def siamese_embedding(list_of_PIL_imgs):
+def siamese_embedding(list_of_PIL_imgs,embedding_model = 'siamese'):
     '''
     Get image embeddings using a trained siamese neural network
 
@@ -29,7 +29,10 @@ def siamese_embedding(list_of_PIL_imgs):
     converted_data = tf.convert_to_tensor([tf.keras.preprocessing.image.img_to_array(image_PIL) for image_PIL in list_of_PIL_imgs])
     preprocessed_data = resnet.preprocess_input(converted_data)
     # #model_name = '../models/siamese_embedding_model_preprocessed_more_negs.tf'
-    model_name = '../models/siamese_embedding_model.tf'
+    if embedding_model == 'siamese':
+        model_name = '../models/siamese_embedding_model.tf'
+    else:
+        model_name = '../models/synthetic_more_projssiamese_embedding_model.tf'        
     embedding = tf.keras.models.load_model(model_name)
     logger.info('Loaded model')    
     
