@@ -516,6 +516,8 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
     '''
     if dataset == 'synthetic':
         out_dir = 'data/synthetic_dataset'        
+    elif dataset == 'synthetic_more_projs':
+        out_dir = 'data/synthetic_more_projections'        
     else: # real 
         out_dir = 'data/real_dataset'     
 
@@ -808,6 +810,10 @@ def main():
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
+    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7']
+    
+    # Do the below when you want same image embedding for different graph embeddings
+    #embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
     #embedding_methods = ['efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
     #embedding_methods = ['efficientnet_b1','efficientnet_b7','siamese_more_projs_all','alexnet','densenet','resnet-18', 'vgg','siamese']
@@ -832,9 +838,11 @@ def main():
     #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     
     #datasets = ['real','synthetic']
-    #datasets = ['real']
-    datasets = ['synthetic']  
-    
+
+    datasets = ['real']
+    #datasets = ['synthetic']  
+    #datasets = ['synthetic_more_projs']
+
     # Hyper-parameter ranges for cross-validation
     # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
     #cluster_hyper_param_ranges = {"DBSCAN": {"eps":"infer","min_samples":range(2,10)}}
