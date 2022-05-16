@@ -65,8 +65,8 @@ def get_config(dataset='real'):
         index_start = 0
         out_dir = 'synthetic_more_projs'      
     elif dataset == 'synthetic_more_projs_noisy':
-        images_file_name = '../data/synthetic_more_projs_noisy/synthetic_noisy.mrcs' 
-        images_true_labels = '../data/synthetic_more_projs_noisy/true_clustering.txt'
+        images_file_name = '../data/synthetic_more_projs_noisy_dataset/synthetic_noisy.mrcs' 
+        images_true_labels = '../data/synthetic_more_projs_noisy_dataset/true_clustering.txt'
         sep = '\t'
         sep2=','
         index_start = 0
@@ -525,6 +525,8 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
     logger.info('Dataset = ' + dataset)
     if dataset == 'synthetic':
         out_dir = 'data/synthetic_dataset'        
+    elif dataset == 'synthetic_more_projs_noisy':
+        out_dir = 'data/synthetic_more_projs_noisy_dataset'       
     elif dataset == 'synthetic_more_projs':
         out_dir = 'data/synthetic_more_projections'       
     elif dataset == 'synthetic_noisy':
@@ -790,7 +792,7 @@ def main():
     parser.add_argument("--node_attribute_methods", nargs='+', default=['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'], help="Image embeddings used as node attributes in the graph embeddings")
     parser.add_argument("--graph_embedding_methods", nargs='+', default=['metapath2vec','wys','graphWave','node2vec'], help="Image embeddings used as node attributes in the graph embeddings")
     parser.add_argument("--embedding_methods", nargs='+', default=['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'], help="Image embeddings - either pure or pure slicem graph")
-    parser.add_argument("--eval_SLICEM", type = bool, default=True, help="Evaluate SLICEM results")
+    parser.add_argument("--eval_SLICEM", default=1, help="Evaluate SLICEM results")
     parser.add_argument("--main_results_dir", default="../results", help="Main directory containing results")
     args = parser.parse_args()
 
@@ -810,6 +812,7 @@ def main():
     #datasets = ['synthetic_more_projs']
     #datasets = ['synthetic_noisy']
     datasets = args.datasets    
+    print(datasets)
 
     #out_dir_suffixes = [''] # experiment name     
     #out_dir_suffixes = ['_siamese_node_embedding'] # experiment name     
@@ -855,7 +858,8 @@ def main():
     
     
     #eval_SLICEM = False
-    eval_SLICEM = args.eval_SLICEM
+    eval_SLICEM = int(args.eval_SLICEM)
+    print(eval_SLICEM)
 
     # Hyper-parameter ranges for cross-validation
     # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
