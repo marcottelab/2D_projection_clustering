@@ -27,8 +27,9 @@ import pickle
 import faulthandler 
 
 faulthandler.enable()
-dataset_name = 'synthetic_more_projs'
+#dataset_name = 'synthetic_more_projs'
 #dataset_name = 'synthetic'
+dataset_name = 'synthetic_noisy'
 
 images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset_name)
 
@@ -40,6 +41,8 @@ if not os.path.exists('./' + out_dir_orig):
 logger.add('./' + out_dir_orig + '/log_file.txt',level="INFO")
     
 data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep, sep2)
+
+target_shape = data[0].shape
 
 logger.info('Lenth of data {}',len(data))
 logger.info('Lenth of complexes {}',len(gt_lines))
@@ -127,7 +130,7 @@ This is important to avoid affecting the weights that the model has already lear
 We are going to leave the bottom few layers trainable, so that we can fine-tune their weights
 during training.
 """
-target_shape = (100,100)
+
 logger.info('Setting base resnet...')
 base_cnn = resnet.ResNet50(
     weights="imagenet", input_shape=target_shape + (3,), include_top=False

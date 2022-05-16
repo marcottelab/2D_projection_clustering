@@ -187,12 +187,12 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
             logger.info('Stacked image + graph embedding array shape: {}',np.shape(vectors))
             
     elif embedding_model in ['siamese','siamese_more_projs_all']:
-        if embedding_model == 'siamese':
-            correct_dims = (350, 350)
-        else:
+        if embedding_model == 'siamese_more_projs_all':
             correct_dims = (100, 100)
+        else:
+            correct_dims = (350, 350)
         #if dataset == 'real': # Resize to correct input dimensions
-        if dataset == 'real' or dataset == 'synthetic': # Resize to correct input dimensions        
+        if dataset == 'real' or dataset == 'synthetic' or dataset == 'synthetic_noisy': # Resize to correct input dimensions        
             list_of_PIL_imgs = [im1.resize(correct_dims) for im1 in list_of_PIL_imgs]
         
         vectors = siamese_embedding(list_of_PIL_imgs, embedding_model)
