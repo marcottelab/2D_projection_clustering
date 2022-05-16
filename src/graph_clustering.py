@@ -81,16 +81,19 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
     return results_df, out_dir_orig, gt_lines,gt_names,n_true_clus,dataset,sep,index_start
     
         
-dataset_type = 'synthetic'
+#dataset_type = 'synthetic'
 #dataset_type = 'real'
+dataset_type = 'synthetic_noisy'
 
 
 # graph_name = 'all_neigs_graph'
 # graph_name = 'slicem_edge_list'
 # graph_name = 'slicem_edge_list_l1'
 #graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
-graph_names = ['siamese_l2_5_edge_list','siamese_cosine_5_edge_list','slicem_edge_list_cosine']
-walktrap_cluster_files =['siamese_l2_5_walktrap_clusters.txt','siamese_cosine_5_walktrap_clusters.txt','slicem_cosine_5_walktrap_clusters.txt']
+#graph_names = ['siamese_l2_5_edge_list','siamese_cosine_5_edge_list','slicem_edge_list_cosine']
+graph_names = ['slicem_edge_list_l2']
+#walktrap_cluster_files =['siamese_l2_5_walktrap_clusters.txt','siamese_cosine_5_walktrap_clusters.txt','slicem_cosine_5_walktrap_clusters.txt']
+walktrap_cluster_files =['slicem_clustering.txt']
 
 # if dataset_type == 'real':
 #     dataset = 'real_dataset/slicem_scores_mixture_Euclidean.txt'

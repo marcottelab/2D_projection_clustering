@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import random
 import pickle as pkl
 
+from argparse import ArgumentParser as argparse_ArgumentParser
 from sklearn.cluster import DBSCAN,AffinityPropagation,MeanShift,OPTICS,Birch
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from img2vec_pytorch import Img2Vec
@@ -64,10 +65,10 @@ def get_config(dataset='real'):
         index_start = 0
         out_dir = 'synthetic_more_projs'      
     elif dataset == 'synthetic_noisy':
-        images_file_name = '../data/synthetic_dataset_noisy/synthetic_noisy.mrcs' 
-        images_true_labels = '../data/synthetic_dataset_noisy/synthetic_true_clustering.txt'
+        images_file_name = '../data/synthetic_noisy_dataset/synthetic_noisy.mrcs' 
+        images_true_labels = '../data/synthetic_noisy_dataset/synthetic_true_clustering.txt'
         sep = '\t'
-        sep2=','
+        sep2=', '
         index_start = 0
         out_dir = 'synthetic_noisy'          
     else: # synthetic
@@ -514,10 +515,13 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
     eval_metrics_dict (dict): Dictionary of evaluation metrics and their values on the predicted set of clusters w.r.t true clusters
     
     '''
+    logger.info('Dataset = ' + dataset)
     if dataset == 'synthetic':
         out_dir = 'data/synthetic_dataset'        
     elif dataset == 'synthetic_more_projs':
-        out_dir = 'data/synthetic_more_projections'        
+        out_dir = 'data/synthetic_more_projections'       
+    elif dataset == 'synthetic_noisy':
+        out_dir = 'data/synthetic_noisy_dataset'           
     else: # real 
         out_dir = 'data/real_dataset'     
 
@@ -771,33 +775,45 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
 def main():
     # Main driver
     
-    #graph_name = 'slicem_edge_list_l1'
-    #graph_name = 'slicem_edge_list_euclidean'
+    parser = argparse_ArgumentParser("Input parameters")
+    parser.add_argument("--graph_names", nargs='+', default=["slicem_edge_list_l2"], help="Name of slicem graph, specify as list")
+    parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")    
+    parser.add_argument("--datasets", nargs='+', default=["synthetic_noisy"], help="Dataset name, opts: real, synthetic, synthetic_noisy")
+    parser.add_argument("--out_dir_suffixes", nargs='+', default=["_node_embedding"], help="Suffix of output directory")
+    parser.add_argument("--node_attribute_methods", nargs='+', default=['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'], help="Image embeddings used as node attributes in the graph embeddings")
+    parser.add_argument("--graph_embedding_methods", nargs='+', default=['metapath2vec','wys','graphWave','node2vec'], help="Image embeddings used as node attributes in the graph embeddings")
+    parser.add_argument("--embedding_methods", nargs='+', default=['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'], help="Image embeddings - either pure or pure slicem graph")
+    parser.add_argument("--eval_SLICEM", type = bool, default=True, help="Evaluate SLICEM results")
+    parser.add_argument("--main_results_dir", default="../results", help="Main directory containing results")
+    args = parser.parse_args()
+
     #graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
     #graph_names = ['slicem_edge_list_cosine']
-    graph_names = ['']
+    #graph_names = ['']
+    graph_names = args.graph_names
     
     #graph_types = ['undirected','directed']
     #graph_types = ['directed']
-    graph_types = ['']
+    #graph_types = ['']
+    graph_types = args.graph_types
     
-    # graph_type = 'undirected'
+    #datasets = ['real','synthetic']
+    #datasets = ['real']
+    #datasets = ['synthetic']  
+    #datasets = ['synthetic_more_projs']
+    #datasets = ['synthetic_noisy']
+    datasets = args.datasets    
 
-    #all_combinations = True
-    all_combinations = False
-
-    #out_dir_suffixes = ['_combined_externally','_combined_internally']
-    out_dir_suffixes = [''] # experiment name     
+    #out_dir_suffixes = [''] # experiment name     
     #out_dir_suffixes = ['_siamese_node_embedding'] # experiment name     
+    #out_dir_suffixes = ['_combined_externally','_combined_internally']
+    out_dir_suffixes = args.out_dir_suffixes
     
-    graph_embedding_method = ''
+    #graph_embedding_methods = ['']
+    graph_embedding_methods = args.graph_embedding_methods
     
     #graph_embedding_methods = ['metapath2vec','wys','graphWave','node2vec']
     
-    #graph_embedding_method = 'metapath2vec'
-    #graph_embedding_method = 'wys'
-    #graph_embedding_method = 'graphWave'
-    #graph_embedding_method = 'node2vec'
     
     #embedding_methods = ['slicem-graph-' + graph_embedding_method for graph_embedding_method in graph_embedding_methods]
     
@@ -805,47 +821,34 @@ def main():
     #node_attribute_methods = ['densenet','siamese','vgg','alexnet']
     #node_attribute_methods = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
     #node_attribute_methods = ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
-    
-    node_attribute_methods = ['']
+    #node_attribute_methods = ['']
+    node_attribute_methods = args.node_attribute_methods
     
     #embedding_methods = ['slicem-graph-' + graph_embedding_method]
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
-    embedding_methods = ['siamese_noisy','alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
+    #embedding_methods = ['siamese_noisy','alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
+    embedding_methods = args.embedding_methods
     
-    
-    # Do the below when you want same image embedding for different graph embeddings
-    #embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
     #embedding_methods = ['efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
     #embedding_methods = ['efficientnet_b1','efficientnet_b7','siamese_more_projs_all','alexnet','densenet','resnet-18', 'vgg','siamese']
     
-    
-    # Do the below when you want same graph embedding method for each image embedding
-    graph_embedding_methods = [graph_embedding_method for i in range(len(embedding_methods))]
  
-    if all_combinations:
-        n_emb = len(embedding_methods)
-        n_graph_emb = len(graph_embedding_methods)
+    n_emb = len(embedding_methods)
+    n_graph_emb = len(graph_embedding_methods)
+    
+    graph_embedding_methods = graph_embedding_methods*n_emb
+    embedding_methods = list(np.repeat(embedding_methods,n_graph_emb))
         
-        graph_embedding_methods = graph_embedding_methods*n_emb
-        embedding_methods = list(np.repeat(embedding_methods,n_graph_emb))
-    
-    # Do the below when you want same image embedding for different graph embeddings
-    # embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
-    
     #clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     
-    #datasets = ['real','synthetic']
-
-    #datasets = ['real']
-    #datasets = ['synthetic']  
-    #datasets = ['synthetic_more_projs']
-    datasets = ['synthetic_noisy']
-    eval_SLICEM = False
+    
+    #eval_SLICEM = False
+    eval_SLICEM = args.eval_SLICEM
 
     # Hyper-parameter ranges for cross-validation
     # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
@@ -874,7 +877,9 @@ def main():
     #                               }    
     
     #main_results_dir = '.'
-    main_results_dir = '../results'
+    #main_results_dir = '../results'
+    main_results_dir = args.main_results_dir
+    
     
     for graph_name in graph_names:
         for graph_type in graph_types:
@@ -945,6 +950,9 @@ def main():
                     with open(results_dir+ '/test_clusters.txt','w') as f:
                         f.writelines([' '.join(list(comp)) + '\n' for comp in test_clusters])            
                     
+                    if eval_SLICEM:            
+                        eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
+
                     for i,embedding_method in enumerate(embedding_methods):
                         graph_embedding_method = graph_embedding_methods[i]
                         logger.info(embedding_method)
@@ -1046,7 +1054,6 @@ def main():
                                 test_results_df = test_results_df.append(pd.Series(test_eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) +' '+ node_attribute_method +  ' embedding ' +  str(clustering_method) + ' clustering'))
                 
                     if eval_SLICEM:            
-                        eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
                         results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
                         
                     #results_df.sort_values(by='No. of clusters',key=lambda x: abs(x-n_true_clusters),inplace=True)

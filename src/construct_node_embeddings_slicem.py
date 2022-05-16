@@ -411,38 +411,38 @@ def cluster_reorder(sequence, subjects):
     # shuffle the subjects into the same order as the sequence yield
     return subjects[sequence.node_order]
 
-dataset_type = 'synthetic_noisy'
+from argparse import ArgumentParser as argparse_ArgumentParser
 
-#dataset_type = 'synthetic'
-#dataset_type = 'real'
+parser = argparse_ArgumentParser("Input parameters")
+parser.add_argument("--dataset_type", default="synthetic_noisy", help="Dataset name, opts: real, synthetic, synthetic_noisy")
+parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True,False], help="Flag to combine image embeddings with graph, opts: True, False or both")
+parser.add_argument("--embeddings_to_combine", nargs='+', default=['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'], 
+                    help="Image embeddings, specify list")
+parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2"], help="Name of slicem graph")
+parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")
 
-combined_opts = [True,False]
-#combined_opts = [False]
-#combined_opts = [True]
+args = parser.parse_args()
+    
 
+dataset_type = args.dataset_type
 
-#combined = False
-#combined = True
-#embedding_to_combine = 'densenet' 
-#embedding_to_combine = 'siamese'
-# embeddings_to_combine = ['siamese']
-#embeddings_to_combine = ['densenet','siamese','vgg','alexnet']
-#embeddings_to_combine = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
-embeddings_to_combine = ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
+#combined_opts = [True,False]
+combined_opts = args.combined_opts
 
+#embeddings_to_combine = ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
+embeddings_to_combine = args.embeddings_to_combine
 
+#graph_name_opts = ['all_neigs_graph','top5_graph','top5_graph_unnorm']
 #graph_name_opts = ['slicem_edge_list']
 #graph_name_opts = ['slicem_edge_list_l1']
 #graph_name_opts = ['slicem_edge_list_euclidean','slicem_edge_list_l1']
 #graph_name_opts = ['slicem_edge_list_cosine']
-graph_name_opts = ['slicem_edge_list_l2']
+#graph_name_opts = ['slicem_edge_list_l2']
+graph_name_opts = args.graph_name_opts
 
-#graph_type = 'directed'
 #graph_types = ['directed','undirected']
-graph_types = ['directed']
-#graph_name_opts = ['all_neigs_graph','top5_graph','top5_graph_unnorm']
-
-#graph_name = 'top5_graph'
+#graph_types = ['directed']
+graph_types = args.graph_types
 
 for graph_name in graph_name_opts:
     for graph_type in graph_types:
