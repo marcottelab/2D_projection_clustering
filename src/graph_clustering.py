@@ -81,14 +81,16 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
     return results_df, out_dir_orig, gt_lines,gt_names,n_true_clus,dataset,sep,index_start
     
         
-#dataset_type = 'synthetic'
-dataset_type = 'real'
+dataset_type = 'synthetic'
+#dataset_type = 'real'
 
 
 # graph_name = 'all_neigs_graph'
 # graph_name = 'slicem_edge_list'
 # graph_name = 'slicem_edge_list_l1'
-graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
+#graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
+graph_names = ['siamese_l2_5_edge_list','siamese_cosine_5_edge_list','slicem_edge_list_cosine']
+walktrap_cluster_files =['siamese_l2_5_walktrap_clusters.txt','siamese_cosine_5_walktrap_clusters.txt','slicem_cosine_5_walktrap_clusters.txt']
 
 # if dataset_type == 'real':
 #     dataset = 'real_dataset/slicem_scores_mixture_Euclidean.txt'
@@ -132,11 +134,15 @@ results_df = pd.concat(results_df_list)
 eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start)
 results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
 
-eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clusters_walktrap_5_euclidean.txt')
-results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM Euclidean reproduced'))    
+# eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clusters_walktrap_5_euclidean.txt')
+# results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM Euclidean reproduced'))    
 
-eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clusters_walktrap_5_w_outliers_l1 - Copy.txt')
-results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM L1 reproduced'))    
+# eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clusters_walktrap_5_w_outliers_l1 - Copy.txt')
+# results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM L1 reproduced'))    
+
+for fname in walktrap_cluster_files:
+    eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = fname)
+    results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = fname))    
  
 results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)   
 

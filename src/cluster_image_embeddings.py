@@ -63,6 +63,13 @@ def get_config(dataset='real'):
         sep2=','
         index_start = 0
         out_dir = 'synthetic_more_projs'      
+    elif dataset == 'synthetic_noisy':
+        images_file_name = '../data/synthetic_dataset_noisy/synthetic_noisy.mrcs' 
+        images_true_labels = '../data/synthetic_dataset_noisy/true_clustering.txt'
+        sep = '\t'
+        sep2=','
+        index_start = 0
+        out_dir = 'synthetic_noisy'          
     else: # synthetic
         images_file_name = '../data/synthetic_dataset/synthetic_2D.mrcs' 
         images_true_labels = '../data/synthetic_dataset/synthetic_true_clustering.txt'
@@ -764,20 +771,24 @@ def main():
     
     #graph_name = 'slicem_edge_list_l1'
     #graph_name = 'slicem_edge_list_euclidean'
-    graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
-    graph_types = ['undirected','directed']
+    #graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
+    graph_names = ['slicem_edge_list_cosine']
+    
+    #graph_types = ['undirected','directed']
+    graph_types = ['directed']
+    
     # graph_type = 'undirected'
 
-    all_combinations = True
-    #all_combinations = False
+    #all_combinations = True
+    all_combinations = False
 
-    out_dir_suffixes = ['_combined_externally','_combined_internally']
-    #out_dir_suffixes = [''] # experiment name     
+    #out_dir_suffixes = ['_combined_externally','_combined_internally']
+    out_dir_suffixes = [''] # experiment name     
     #out_dir_suffixes = ['_siamese_node_embedding'] # experiment name     
     
-    #graph_embedding_method = ''
+    graph_embedding_method = ''
     
-    graph_embedding_methods = ['metapath2vec','wys','graphWave','node2vec']
+    #graph_embedding_methods = ['metapath2vec','wys','graphWave','node2vec']
     
     #graph_embedding_method = 'metapath2vec'
     #graph_embedding_method = 'wys'
@@ -786,22 +797,24 @@ def main():
     
     #embedding_methods = ['slicem-graph-' + graph_embedding_method for graph_embedding_method in graph_embedding_methods]
     
-    #embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
+    embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
     #node_attribute_methods = ['densenet','siamese','vgg','alexnet']
     #node_attribute_methods = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
+    node_attribute_methods = ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
     
-    node_attribute_methods = ['']
+    #node_attribute_methods = ['']
     
     #embedding_methods = ['slicem-graph-' + graph_embedding_method]
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
-    embedding_methods = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
+    #embedding_methods = ['efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
+    #embedding_methods = ['efficientnet_b1','efficientnet_b7','siamese_more_projs_all','alexnet','densenet','resnet-18', 'vgg','siamese']
     
     
     # Do the below when you want same graph embedding method for each image embedding
-    #graph_embedding_methods = [graph_embedding_method for i in range(len(embedding_methods))]
+    graph_embedding_methods = [graph_embedding_method for i in range(len(embedding_methods))]
  
     if all_combinations:
         n_emb = len(embedding_methods)
@@ -809,7 +822,6 @@ def main():
         
         graph_embedding_methods = graph_embedding_methods*n_emb
         embedding_methods = list(np.repeat(embedding_methods,n_graph_emb))
-            
     
     # Do the below when you want same image embedding for different graph embeddings
     # embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
@@ -820,8 +832,8 @@ def main():
     #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     
     #datasets = ['real','synthetic']
-    datasets = ['real']
-    #datasets = ['synthetic']  
+    #datasets = ['real']
+    datasets = ['synthetic']  
     
     # Hyper-parameter ranges for cross-validation
     # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
@@ -859,6 +871,8 @@ def main():
                 graph_name_exp = 'slicem_l1'
             elif graph_name == 'slicem_edge_list_euclidean':
                 graph_name_exp = 'slicem_l2'
+            elif graph_name == 'slicem_edge_list_cosine':
+                graph_name_exp = 'slicem_cosine'                
                 
             experiment_name = graph_name_exp + '_' + graph_type    
             

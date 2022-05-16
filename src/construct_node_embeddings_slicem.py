@@ -412,12 +412,12 @@ def cluster_reorder(sequence, subjects):
     return subjects[sequence.node_order]
 
 
-#dataset_type = 'synthetic'
-dataset_type = 'real'
+dataset_type = 'synthetic'
+#dataset_type = 'real'
 
-#combined_opts = [True,False]
+combined_opts = [True,False]
 #combined_opts = [False]
-combined_opts = [True]
+#combined_opts = [True]
 
 
 #combined = False
@@ -426,16 +426,18 @@ combined_opts = [True]
 #embedding_to_combine = 'siamese'
 # embeddings_to_combine = ['siamese']
 #embeddings_to_combine = ['densenet','siamese','vgg','alexnet']
-embeddings_to_combine = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
+#embeddings_to_combine = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
+embeddings_to_combine = ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
 
 
 #graph_name_opts = ['slicem_edge_list']
 #graph_name_opts = ['slicem_edge_list_l1']
-graph_name_opts = ['slicem_edge_list_euclidean','slicem_edge_list_l1']
-
+#graph_name_opts = ['slicem_edge_list_euclidean','slicem_edge_list_l1']
+graph_name_opts = ['slicem_edge_list_cosine']
 
 #graph_type = 'directed'
-graph_types = ['directed','undirected']
+#graph_types = ['directed','undirected']
+graph_types = ['directed']
 #graph_name_opts = ['all_neigs_graph','top5_graph','top5_graph_unnorm']
 
 #graph_name = 'top5_graph'
@@ -454,21 +456,25 @@ for graph_name in graph_name_opts:
                 for embedding_to_combine in embeddings_to_combine:
                     if dataset_type == 'real':
                         if embedding_to_combine == 'siamese':
-                            with open('../results/real_siamese_transferred/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
+                            with open('../results/real_all/real_siamese_transferred/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)
                         elif embedding_to_combine == 'siamese_more_projs_all':
-                            with open('../results/real_siamese_more_projs_all_efficientnet/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
+                            with open('../results/real_all/real_siamese_more_projs_all_efficientnet/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f) 
                         elif embedding_to_combine in ['efficientnet_b1','efficientnet_b7']:
-                            with open('../results/real_siamese_more_projs_all_efficientnet/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                            with open('../results/real_all/real_siamese_more_projs_all_efficientnet/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)    
                         else:
-                            with open('../results/real_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                            with open('../results/real_all/real_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)
                              
                     else: # synthetic
-                        with open('../results/synthetic_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
-                            image_embeddings = np.load(f)
+                        if embedding_to_combine in ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']:
+                            with open('../results/synthetic_all/synthetic_big_siamese_and_efficientnet/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                image_embeddings = np.load(f)   
+                        else:                    
+                            with open('../results/synthetic_all/synthetic_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                image_embeddings = np.load(f)
                             
                     node_data = pd.DataFrame(image_embeddings,index=[str(num) for num in range(len(image_embeddings))])
                     G = StellarGraph.from_networkx(g, node_features=node_data)
