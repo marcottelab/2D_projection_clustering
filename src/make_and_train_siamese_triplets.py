@@ -29,7 +29,8 @@ import faulthandler
 faulthandler.enable()
 #dataset_name = 'synthetic_more_projs'
 #dataset_name = 'synthetic'
-dataset_name = 'synthetic_noisy'
+#dataset_name = 'synthetic_noisy'
+dataset_name = 'synthetic_more_projs_noisy'
 
 images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset_name)
 

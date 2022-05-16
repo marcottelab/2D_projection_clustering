@@ -63,6 +63,13 @@ def get_config(dataset='real'):
         sep2=','
         index_start = 0
         out_dir = 'synthetic_more_projs'      
+    elif dataset == 'synthetic_more_projs_noisy':
+        images_file_name = '../data/synthetic_more_projs_noisy/synthetic_noisy.mrcs' 
+        images_true_labels = '../data/synthetic_more_projs_noisy/true_clustering.txt'
+        sep = '\t'
+        sep2=','
+        index_start = 0
+        out_dir = 'synthetic_more_projs_noisy'      
     elif dataset == 'synthetic_noisy':
         images_file_name = '../data/synthetic_dataset_noisy/synthetic_noisy.mrcs' 
         images_true_labels = '../data/synthetic_dataset_noisy/synthetic_true_clustering.txt'
