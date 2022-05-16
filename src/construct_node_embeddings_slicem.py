@@ -411,8 +411,9 @@ def cluster_reorder(sequence, subjects):
     # shuffle the subjects into the same order as the sequence yield
     return subjects[sequence.node_order]
 
+dataset_type = 'synthetic_noisy'
 
-dataset_type = 'synthetic'
+#dataset_type = 'synthetic'
 #dataset_type = 'real'
 
 combined_opts = [True,False]
@@ -433,7 +434,8 @@ embeddings_to_combine = ['densenet','siamese','vgg','alexnet','siamese_more_proj
 #graph_name_opts = ['slicem_edge_list']
 #graph_name_opts = ['slicem_edge_list_l1']
 #graph_name_opts = ['slicem_edge_list_euclidean','slicem_edge_list_l1']
-graph_name_opts = ['slicem_edge_list_cosine']
+#graph_name_opts = ['slicem_edge_list_cosine']
+graph_name_opts = ['slicem_edge_list_l2']
 
 #graph_type = 'directed'
 #graph_types = ['directed','undirected']

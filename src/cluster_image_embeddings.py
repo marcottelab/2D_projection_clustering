@@ -186,7 +186,7 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
             vectors = np.hstack((vectors,graph_vectors))
             logger.info('Stacked image + graph embedding array shape: {}',np.shape(vectors))
             
-    elif embedding_model in ['siamese','siamese_more_projs_all']:
+    elif embedding_model in ['siamese','siamese_noisy','siamese_more_projs_all']:
         if embedding_model == 'siamese_more_projs_all':
             correct_dims = (100, 100)
         else:
@@ -812,7 +812,9 @@ def main():
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
-    embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
+    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
+    embedding_methods = ['siamese_noisy','alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
+    
     
     # Do the below when you want same image embedding for different graph embeddings
     #embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
