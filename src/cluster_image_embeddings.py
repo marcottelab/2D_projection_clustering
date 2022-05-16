@@ -65,7 +65,7 @@ def get_config(dataset='real'):
         out_dir = 'synthetic_more_projs'      
     elif dataset == 'synthetic_noisy':
         images_file_name = '../data/synthetic_dataset_noisy/synthetic_noisy.mrcs' 
-        images_true_labels = '../data/synthetic_dataset_noisy/true_clustering.txt'
+        images_true_labels = '../data/synthetic_dataset_noisy/synthetic_true_clustering.txt'
         sep = '\t'
         sep2=','
         index_start = 0
@@ -774,10 +774,12 @@ def main():
     #graph_name = 'slicem_edge_list_l1'
     #graph_name = 'slicem_edge_list_euclidean'
     #graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
-    graph_names = ['slicem_edge_list_cosine']
+    #graph_names = ['slicem_edge_list_cosine']
+    graph_names = ['']
     
     #graph_types = ['undirected','directed']
-    graph_types = ['directed']
+    #graph_types = ['directed']
+    graph_types = ['']
     
     # graph_type = 'undirected'
 
@@ -799,18 +801,18 @@ def main():
     
     #embedding_methods = ['slicem-graph-' + graph_embedding_method for graph_embedding_method in graph_embedding_methods]
     
-    embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
+    #embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
     #node_attribute_methods = ['densenet','siamese','vgg','alexnet']
     #node_attribute_methods = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
-    node_attribute_methods = ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
+    #node_attribute_methods = ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
     
-    #node_attribute_methods = ['']
+    node_attribute_methods = ['']
     
     #embedding_methods = ['slicem-graph-' + graph_embedding_method]
     #embedding_methods = ['densenet']
     #embedding_methods = ['siamese']
     #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
-    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7']
+    embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
     
     # Do the below when you want same image embedding for different graph embeddings
     #embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
@@ -832,16 +834,16 @@ def main():
     # Do the below when you want same image embedding for different graph embeddings
     # embedding_methods = ['siamese' for i in range(len(graph_embedding_methods))]
     
-    
-   
     #clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
     #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     
     #datasets = ['real','synthetic']
 
-    datasets = ['real']
+    #datasets = ['real']
     #datasets = ['synthetic']  
     #datasets = ['synthetic_more_projs']
+    datasets = ['synthetic_noisy']
+    eval_SLICEM = False
 
     # Hyper-parameter ranges for cross-validation
     # eps, default=0.5, The maximum distance between two samples for one to be considered as in the neighborhood of the other.
@@ -880,7 +882,9 @@ def main():
             elif graph_name == 'slicem_edge_list_euclidean':
                 graph_name_exp = 'slicem_l2'
             elif graph_name == 'slicem_edge_list_cosine':
-                graph_name_exp = 'slicem_cosine'                
+                graph_name_exp = 'slicem_cosine'   
+            else:
+                graph_name_exp = graph_name
                 
             experiment_name = graph_name_exp + '_' + graph_type    
             
@@ -1039,9 +1043,9 @@ def main():
                                     test_results_df = pd.DataFrame(columns = test_eval_metrics_dict.keys())
                                 test_results_df = test_results_df.append(pd.Series(test_eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) +' '+ node_attribute_method +  ' embedding ' +  str(clustering_method) + ' clustering'))
                 
-                                
-                    eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
-                    results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
+                    if eval_SLICEM:            
+                        eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clusters,dataset,sep,index_start)
+                        results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
                         
                     #results_df.sort_values(by='No. of clusters',key=lambda x: abs(x-n_true_clusters),inplace=True)
                     #results_df.sort_values(by='3 F1 score average',ascending=False,inplace=True)

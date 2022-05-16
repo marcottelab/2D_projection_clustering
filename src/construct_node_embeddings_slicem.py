@@ -467,7 +467,9 @@ for graph_name in graph_name_opts:
                         else:
                             with open('../results/real_all/real_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)
-                             
+                    elif dataset_type == 'synthetic_noisy': # synthetic             
+                        with open('../results/synthetic_noisy__/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                            image_embeddings = np.load(f)                             
                     else: # synthetic
                         if embedding_to_combine in ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']:
                             with open('../results/synthetic_all/synthetic_big_siamese_and_efficientnet/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
