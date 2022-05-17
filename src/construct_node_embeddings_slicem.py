@@ -414,12 +414,12 @@ def cluster_reorder(sequence, subjects):
 from argparse import ArgumentParser as argparse_ArgumentParser
 
 parser = argparse_ArgumentParser("Input parameters")
-parser.add_argument("--dataset_type", default="synthetic_noisy", help="Dataset name, opts: real, synthetic, synthetic_noisy")
+parser.add_argument("--dataset_type", default="synthetic_more_projs_noisy", help="Dataset name, opts: real, synthetic, synthetic_noisy")
 parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True,False], help="Flag to combine image embeddings with graph, opts: True, False or both")
-parser.add_argument("--embeddings_to_combine", nargs='+', default=['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'], 
+parser.add_argument("--embeddings_to_combine", nargs='+', default=['densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'], 
                     help="Image embeddings, specify list")
 parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2"], help="Name of slicem graph")
-parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")
+parser.add_argument("--graph_types", nargs='+', default=["undirected"],help="Type of graph - directed, undirected or both")
 
 args = parser.parse_args()
     
@@ -469,9 +469,9 @@ for graph_name in graph_name_opts:
                         else:
                             with open('../results/real_all/real_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)
-                    elif dataset_type == 'synthetic_noisy': # synthetic             
-                        with open('../results/synthetic_noisy__/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
-                            image_embeddings = np.load(f)                             
+                    elif dataset_type in ['synthetic_noisy','synthetic_more_projs_noisy']: # synthetic             
+                        with open('../results/'+dataset_type+'__/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                            image_embeddings = np.load(f)                              
                     else: # synthetic
                         if embedding_to_combine in ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']:
                             with open('../results/synthetic_all/synthetic_big_siamese_and_efficientnet/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:

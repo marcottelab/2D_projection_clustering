@@ -15,6 +15,7 @@ from networkx.algorithms.community import asyn_lpa_communities, label_propagatio
 from cluster_image_embeddings import get_config, read_clusters, evaluate_clusters, evaluate_SLICEM
 import numpy as np
 import pandas as pd
+import os
 
 
 def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_results_dir='../results'):
@@ -30,10 +31,11 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
     images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset)
     
     out_dir = out_dir_orig 
-    gt_lines, gt_names =  read_clusters(images_true_labels,sep)
-    n_true_clus = len(gt_lines)        
     
-   
+    if not os.path.exists(main_results_dir + '/' + out_dir_orig):
+        os.mkdir(main_results_dir + '/' + out_dir_orig)        
+    gt_lines, gt_names =  read_clusters(images_true_labels,sep,sep2)
+    n_true_clus = len(gt_lines)        
     
     for clustering_method in clustering_methods:    
         if clustering_method == 'greedy_modularity':
@@ -80,10 +82,18 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
     
     return results_df, out_dir_orig, gt_lines,gt_names,n_true_clus,dataset,sep,index_start
     
+from argparse import ArgumentParser as argparse_ArgumentParser
+
+parser = argparse_ArgumentParser("Input parameters")
+parser.add_argument("--dataset_type", default="synthetic_more_projs_noisy", help="Dataset name, opts: real, synthetic, synthetic_noisy")
+parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2"], help="Name of slicem graph")
+
+args = parser.parse_args()
         
 #dataset_type = 'synthetic'
 #dataset_type = 'real'
-dataset_type = 'synthetic_noisy'
+#dataset_type = 'synthetic_noisy'
+dataset_type = args.dataset_type
 
 
 # graph_name = 'all_neigs_graph'
@@ -91,7 +101,9 @@ dataset_type = 'synthetic_noisy'
 # graph_name = 'slicem_edge_list_l1'
 #graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
 #graph_names = ['siamese_l2_5_edge_list','siamese_cosine_5_edge_list','slicem_edge_list_cosine']
-graph_names = ['slicem_edge_list_l2']
+#graph_names = ['slicem_edge_list_l2']
+graph_names = args.graph_name_opts
+
 #walktrap_cluster_files =['siamese_l2_5_walktrap_clusters.txt','siamese_cosine_5_walktrap_clusters.txt','slicem_cosine_5_walktrap_clusters.txt']
 walktrap_cluster_files =['slicem_clustering.txt']
 
@@ -112,6 +124,7 @@ walktrap_cluster_files =['slicem_clustering.txt']
 # with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','wb') as f:
 #     f.write(graph_str.encode('UTF-8'))
 
+    
 results_df_list = []
 for graph_name in graph_names:
     graph_type = 'directed'
@@ -123,7 +136,7 @@ for graph_name in graph_names:
     # Out[8]: 611
         
     df1, out_dir_orig, gt_lines,gt_names,n_true_clus,dataset,sep,index_start = run_clustering(graph,dataset_type,graph_name, graph_type)   
-    
+
     graph_type = 'undirected'
     with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','rb') as f:    
         graph = nx.read_weighted_edgelist(f)
