@@ -17,10 +17,10 @@ def main():
     parser = argparse.ArgumentParser(description='compare similarity of 2D class averages based on common lines')
     
     parser.add_argument('-i', '--input', action='store', dest='mrc_input', required=False,
-                        default='../data/synthetic_dataset_noisy/synthetic_noisy.mrcs',help='path to mrcs file of 2D class averages')
+                        default='../data/synthetic_more_projs_noisy_dataset/synthetic_noisy.mrcs',help='path to mrcs file of 2D class averages')
     
     parser.add_argument('-o', '--outpath', action='store', dest='outpath', required=False,
-                        default='../data/synthetic_dataset_noisy/',help='path for output files')
+                        default='../data/synthetic_more_projs_noisy_dataset/',help='path for output files')
     
     parser.add_argument('-m', '--metric', action='store', dest='metric', required=False, 
                         default='Euclidean', choices=['Euclidean', 'L1', 'cosine', 'EMD', 'correlate'],
