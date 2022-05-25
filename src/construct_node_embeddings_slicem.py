@@ -414,12 +414,12 @@ def cluster_reorder(sequence, subjects):
 from argparse import ArgumentParser as argparse_ArgumentParser
 
 parser = argparse_ArgumentParser("Input parameters")
-parser.add_argument("--dataset_type", default="synthetic_more_projs_noisy", help="Dataset name, opts: real, synthetic, synthetic_noisy")
-parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True,False], help="Flag to combine image embeddings with graph, opts: True, False or both")
-parser.add_argument("--embeddings_to_combine", nargs='+', default=['densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'], 
+parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
+parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True], help="Flag to combine image embeddings with graph, opts: True, False or both")
+parser.add_argument("--embeddings_to_combine", nargs='+', default=['siamese_real'], 
                     help="Image embeddings, specify list")
-parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2"], help="Name of slicem graph")
-parser.add_argument("--graph_types", nargs='+', default=["undirected"],help="Type of graph - directed, undirected or both")
+parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2_top3k","slicem_edge_list_l1"], help="Name of slicem graph")
+parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")
 
 args = parser.parse_args()
     
@@ -452,14 +452,19 @@ for graph_name in graph_name_opts:
             else:
                 g = nx.read_weighted_edgelist(f)
                 
+        #print(sorted(g.nodes()))
+                
         for combined in combined_opts:
             if combined:
                 # Read image node embeddings as features
                 for embedding_to_combine in embeddings_to_combine:
                     if dataset_type == 'real':
-                        if embedding_to_combine == 'siamese':
-                            with open('../results/real_all/real_siamese_transferred/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
+                        if embedding_to_combine in ['siamese','siamese_noisy','siamese_more_projs_noisy']:
+                            with open('../results/real_all/real_siamese_transferred/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)
+                        elif embedding_to_combine == 'siamese_real':
+                            with open('../results/real_all/real_own_siamese_0.36/siamese_real/siamese_real_reduced_embeddings.npy', 'rb') as f:
+                                image_embeddings = np.load(f)                                 
                         elif embedding_to_combine == 'siamese_more_projs_all':
                             with open('../results/real_all/real_siamese_more_projs_all_efficientnet/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f) 
@@ -481,6 +486,7 @@ for graph_name in graph_name_opts:
                                 image_embeddings = np.load(f)
                             
                     node_data = pd.DataFrame(image_embeddings,index=[str(num) for num in range(len(image_embeddings))])
+                    #print(node_data.loc[['85']])
                     G = StellarGraph.from_networkx(g, node_features=node_data)
                     get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type)
                     
