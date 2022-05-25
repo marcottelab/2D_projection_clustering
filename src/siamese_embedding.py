@@ -35,6 +35,8 @@ def siamese_embedding(list_of_PIL_imgs,embedding_model = 'siamese'):
         model_name = '../models/synthetic_noisysiamese_embedding_model.tf'        
     elif embedding_model == 'siamese_more_projs_noisy':
         model_name = '../models/synthetic_more_projs_noisysiamese_embedding_model.tf'        
+    elif embedding_model == 'siamese_real':
+        model_name = '../models/realsiamese_embedding_model.tf'        
     else:
         model_name = '../models/synthetic_more_projssiamese_embedding_model.tf'        
     embedding = tf.keras.models.load_model(model_name)

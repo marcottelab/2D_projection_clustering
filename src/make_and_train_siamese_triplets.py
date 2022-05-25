@@ -30,7 +30,9 @@ faulthandler.enable()
 #dataset_name = 'synthetic_more_projs'
 #dataset_name = 'synthetic'
 #dataset_name = 'synthetic_noisy'
-dataset_name = 'synthetic_more_projs_noisy'
+#dataset_name = 'synthetic_more_projs_noisy'
+dataset_name = 'real'
+n_negs_sampled = 10
 
 images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset_name)
 
@@ -61,25 +63,27 @@ for cluster_set in gt_lines:
     
     for pair in cluster_pairs:
         sampled_negatives = []
-        for i in range(10):
+        for i in range(n_negs_sampled):
             sampled_negatives.append(random.choice(list(negatives)))
             
         siamese_triples_with_10_sampled_negs = siamese_triples_with_10_sampled_negs + [(pair[0],pair[1],str(neg)) for neg in sampled_negatives]
        
+
+logger.info(siamese_triples_with_10_sampled_negs[0])
 logger.info('N triples {}',len(siamese_triples_with_10_sampled_negs))
 logger.info('Converting images...')
 converted_data =[tf.keras.preprocessing.image.img_to_array(Image.fromarray(np.uint8(data_arr*255)).convert('RGB')) for data_arr in data] 
 logger.info('Making anchor images list...')
 #anchor_images = [data[int(triple[0])] for triple in siamese_triples_with_10_sampled_negs]
-anchor_images = [converted_data[int(triple[0])] for triple in siamese_triples_with_10_sampled_negs]
+anchor_images = [converted_data[int(triple[0])-index_start] for triple in siamese_triples_with_10_sampled_negs]
 
 logger.info('Making positive images list...')        
 #positive_images = [data[int(triple[1])] for triple in siamese_triples_with_10_sampled_negs]
-positive_images = [converted_data[int(triple[1])] for triple in siamese_triples_with_10_sampled_negs]
+positive_images = [converted_data[int(triple[1])-index_start] for triple in siamese_triples_with_10_sampled_negs]
 
 logger.info('Making negative images list...')
 #negative_images = [data[int(triple[2])] for triple in siamese_triples_with_10_sampled_negs]
-negative_images = [converted_data[int(triple[2])] for triple in siamese_triples_with_10_sampled_negs]
+negative_images = [converted_data[int(triple[2])-index_start] for triple in siamese_triples_with_10_sampled_negs]
 
 logger.info('N pos {}',len(positive_images))
 logger.info('N neg = {}', len(negative_images))
