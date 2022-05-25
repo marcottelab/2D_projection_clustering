@@ -241,22 +241,23 @@ def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_te
 
     max_indices_i = np_argmax(Metric, axis=0)
     
+    max_indices_j = np_argmax(Metric, axis=1)
+    best_matches_4known = [(fin_list_graphs[j][0],known_complex_nodes_list[i],Metric[i,j],fin_list_graphs[j][1]) for i,j in enumerate(max_indices_j)]
+    
+    avged_f1_score4known = plot_f1_scores(best_matches_4known,out_comp_nm,'_best4known'+suffix,'Best predicted match for known complexes - ',plot_hist_flag)
+
+    write_best_matches(best_matches_4known,out_comp_nm,dir_nm,'_best4known' + suffix,0,gt_names)
+
     if len(gt_names) == len(known_complex_nodes_list):
         best_matches_4predicted = [(fin_list_graphs[j][0],known_complex_nodes_list[i],Metric[i,j],fin_list_graphs[j][1],gt_names[i]) for j,i in enumerate(max_indices_i)]
     else:
         best_matches_4predicted = [(fin_list_graphs[j][0],known_complex_nodes_list[i],Metric[i,j],fin_list_graphs[j][1]) for j,i in enumerate(max_indices_i)]
         
-
-    max_indices_j = np_argmax(Metric, axis=1)
-    best_matches_4known = [(fin_list_graphs[j][0],known_complex_nodes_list[i],Metric[i,j],fin_list_graphs[j][1]) for i,j in enumerate(max_indices_j)]
-    
-    avged_f1_score4known = plot_f1_scores(best_matches_4known,out_comp_nm,'_best4known'+suffix,'Best predicted match for known complexes - ',plot_hist_flag)
     avged_f1_score4pred = plot_f1_scores(best_matches_4predicted,out_comp_nm,'_best4predicted'+suffix,'Best known match for predicted complexes - ',plot_hist_flag)
     
     avg_f1_score = (avged_f1_score4known + avged_f1_score4pred)/2
     net_f1_score = 2 * avged_f1_score4known * avged_f1_score4pred / (avged_f1_score4known + avged_f1_score4pred)
     
-    write_best_matches(best_matches_4known,out_comp_nm,dir_nm,'_best4known' + suffix,0,gt_names)
     write_best_matches_best4pred(best_matches_4predicted,out_comp_nm,dir_nm,'_best4predicted' + suffix)
 
     prec_MMR, recall_MMR, f1_MMR, max_matching_edges = f1_mmr(Metric)
@@ -368,13 +369,13 @@ def plot_size_dists(known_complex_nodes_list, fin_list_graphs, sizes_orig, out_c
     plt_close(fig)
 
 
-def remove_unknown_prots(fin_list_graphs_orig, prot_list):
+def remove_unknown_prots(fin_list_graphs_orig, prot_list, min_len = 3):
     # Remove all proteins in predicted complexes that are not present in known complex protein list
     fin_list_graphs = []
     for comp in fin_list_graphs_orig:
         comp = (comp[0].intersection(prot_list), comp[1])
 
-        if len(comp[0]) > 2:  # Removing complexes with only one,two or no nodes
+        if len(comp[0]) > min_len - 1:  # Removing complexes with only one,two or no nodes
             fin_list_graphs.append(comp)
     return fin_list_graphs
 

@@ -28,7 +28,7 @@ from loguru import logger
 from sklearn import manifold
 from yaml import dump as yaml_dump
 
-from eval_complex import compute_metrics
+from eval_complex import compute_metrics, remove_unknown_prots
 from siamese_embedding import siamese_embedding
 from read_node2vec_embeddings import slicem_graph_embeddings
 
@@ -475,7 +475,7 @@ def write_clusters(clusterwise_indices_start_str,clustering_method,out_dir,main_
         fid.writelines(writeable_clusters)    
         
         
-def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_method,out_dir,n_true_clus,gt_names,main_results_dir='../results',suffix='',plot_hist_flag=1):
+def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_method,out_dir,n_true_clus,gt_names,main_results_dir='../results',suffix='',plot_hist_flag=1,with_junk=1):
     '''
     Evaluate predicted clusters against ground truth
     
@@ -496,15 +496,37 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
     out_dir = out_dir + '/evaluate' + suffix
     if not os.path.exists(main_results_dir + '/' + out_dir):
         os.mkdir(main_results_dir + '/' + out_dir)
-    eval_metrics_dict = compute_metrics(gt_lines, clusterwise_indices_start_str,main_results_dir + '/' + out_dir + '/' + str(clustering_method),len(gt_lines),n_clus,{"eval_p":0.5,"dir_nm":out_dir},'',gt_names,plot_hist_flag)            
+        
+    eval_metrics_dict = dict()
+    
+    if with_junk:
+        eval_metrics_dict = compute_metrics(gt_lines, clusterwise_indices_start_str,main_results_dir + '/' + out_dir + '/' + str(clustering_method),len(gt_lines),n_clus,{"eval_p":0.5,"dir_nm":out_dir},'',gt_names,plot_hist_flag)            
+        with open(main_results_dir + '/' + out_dir + '/' + str(clustering_method) + '_metrics.txt', "a") as fid:
+            print('No. of predicted clusters = ',n_clus, file=fid)  
+            print('No. of true clusters = ',n_true_clus, file=fid)          
+            
+        eval_metrics_dict["No. of clusters"] = n_clus
+            
+        if ('MMR F1 score' in eval_metrics_dict) and ('Net F1 score' in eval_metrics_dict) and ('Qi F1 score' in eval_metrics_dict):
+            eval_metrics_dict['3 F1 score average'] = (eval_metrics_dict['MMR F1 score'] + eval_metrics_dict['Net F1 score'] + eval_metrics_dict['Qi F1 score'])/3.0
+
+    # After removing unknown projections
+    prot_list = set().union(*gt_lines)
+    clusterwise_indices_start_str = remove_unknown_prots(clusterwise_indices_start_str, prot_list, 1)    
+    n_clus_new = len(clusterwise_indices_start_str)
+    eval_metrics_dict_1 = compute_metrics(gt_lines, clusterwise_indices_start_str,main_results_dir + '/' + out_dir + '/' + str(clustering_method),len(gt_lines),n_clus_new,{"eval_p":0.5,"dir_nm":out_dir},'',gt_names,plot_hist_flag)            
     with open(main_results_dir + '/' + out_dir + '/' + str(clustering_method) + '_metrics.txt', "a") as fid:
-        print('No. of predicted clusters = ',n_clus, file=fid)  
+        print('After removing unknown projections',file=fid)
+        print('No. of predicted clusters = ',n_clus_new, file=fid)  
         print('No. of true clusters = ',n_true_clus, file=fid)          
         
-    eval_metrics_dict["No. of clusters"] = n_clus
+    eval_metrics_dict_1["No. of clusters"] = n_clus_new
         
     if ('MMR F1 score' in eval_metrics_dict) and ('Net F1 score' in eval_metrics_dict) and ('Qi F1 score' in eval_metrics_dict):
-        eval_metrics_dict['3 F1 score average'] = (eval_metrics_dict['MMR F1 score'] + eval_metrics_dict['Net F1 score'] + eval_metrics_dict['Qi F1 score'])/3.0
+        eval_metrics_dict_1['3 F1 score average'] = (eval_metrics_dict_1['MMR F1 score'] + eval_metrics_dict_1['Net F1 score'] + eval_metrics_dict_1['Qi F1 score'])/3.0
+        
+    for key, val in eval_metrics_dict_1.items():
+        eval_metrics_dict[key+ ' w/o junk'] = val
 
     return eval_metrics_dict
 
@@ -785,9 +807,9 @@ def main():
     # Main driver
     
     parser = argparse_ArgumentParser("Input parameters")
-    parser.add_argument("--graph_names", nargs='+', default=["slicem_edge_list_l2"], help="Name of slicem graph, specify as list")
-    parser.add_argument("--graph_types", nargs='+', default=["undirected"],help="Type of graph - directed, undirected or both")    
-    parser.add_argument("--datasets", nargs='+', default=["synthetic_more_projs_noisy"], help="Dataset name, opts: real, synthetic, synthetic_noisy")
+    parser.add_argument("--graph_names", nargs='+', default=["slicem_edge_list_l1","slicem_edge_list_euclidean"], help="Name of slicem graph, specify as list")
+    parser.add_argument("--graph_types", nargs='+', default=["undirected","directed"],help="Type of graph - directed, undirected or both")    
+    parser.add_argument("--datasets", nargs='+', default=["real"], help="Dataset name, opts: real, synthetic, synthetic_noisy")
     parser.add_argument("--out_dir_suffixes", nargs='+', default=["_node_embedding"], help="Suffix of output directory")
     parser.add_argument("--node_attribute_methods", nargs='+', default=['densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'], help="Image embeddings used as node attributes in the graph embeddings")
     parser.add_argument("--graph_embedding_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings")
