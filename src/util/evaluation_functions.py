@@ -6,8 +6,8 @@ Created on Sun May 29 17:41:16 2022
 """
         
 import os
-from eval_complex import compute_metrics, remove_unknown_prots
-from input_functions import read_clusters
+from util.eval_complex import compute_metrics, remove_unknown_prots
+from util.input_functions import read_clusters
 
 def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_method,out_dir,n_true_clus,gt_names,main_results_dir='../results',suffix='',plot_hist_flag=1,with_junk=1):
     '''

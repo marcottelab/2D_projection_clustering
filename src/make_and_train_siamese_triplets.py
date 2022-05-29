@@ -4,7 +4,7 @@ Created on Fri Dec 10 15:59:42 2021
 
 @author: Meghana
 """
-from input_functions import get_config, read_data
+from util.input_functions import get_config, read_data
 
 from itertools import combinations
 import random

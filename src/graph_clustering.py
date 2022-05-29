@@ -12,8 +12,8 @@ from networkx.algorithms.community import greedy_modularity_communities
 #from networkx.algorithms import community
 from networkx.algorithms.community import k_clique_communities, asyn_lpa_communities, label_propagation_communities
 # from networkx.algorithms.community import asyn_fluidc
-from input_functions import get_config, read_clusters
-from evaluation_functions import evaluate_SLICEM, evaluate_clusters
+from util.input_functions import get_config, read_clusters
+from util.evaluation_functions import evaluate_SLICEM, evaluate_clusters
 
 #import numpy as np
 import pandas as pd

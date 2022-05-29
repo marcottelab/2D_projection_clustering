@@ -27,8 +27,8 @@ from sklearn.decomposition import PCA, TruncatedSVD
 from loguru import logger
 from sklearn import manifold
 from yaml import dump as yaml_dump
-from input_functions import get_config, read_clusters, read_data
-from evaluation_functions import evaluate_SLICEM, evaluate_clusters
+from util.input_functions import get_config, read_clusters, read_data
+from util.evaluation_functions import evaluate_SLICEM, evaluate_clusters
 
 from siamese_embedding import siamese_embedding
 from read_node2vec_embeddings import slicem_graph_embeddings

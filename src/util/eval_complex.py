@@ -12,7 +12,7 @@ from logging import info as logging_info
 from matplotlib.pyplot import figure as plt_figure, savefig as plt_savefig, close as plt_close, xlabel as plt_xlabel, title as plt_title, plot as plt_plot,ylabel as plt_ylabel, rc as plt_rc, rcParams as plt_rcParams
 #from convert_humap_ids2names import convert2names_wscores_matches
 from collections import Counter
-from test_F1_MMR import f1_mmr
+from util.test_F1_MMR import f1_mmr
 
 
 def write_best_matches(best_matches_for_known,out_comp_nm,dir_nm,suffix,write_comp_score=0,gt_names=[]):

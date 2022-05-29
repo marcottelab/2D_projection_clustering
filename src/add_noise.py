@@ -5,7 +5,7 @@ Created on Sun May 15 23:05:20 2022
 @author: Meghana
 """
 
-from input_functions import get_config, read_data
+from util.input_functions import get_config, read_data
 
 import skimage
 from matplotlib import pyplot as plt
