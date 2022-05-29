@@ -416,7 +416,7 @@ from argparse import ArgumentParser as argparse_ArgumentParser
 parser = argparse_ArgumentParser("Input parameters")
 parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
 parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True], help="Flag to combine image embeddings with graph, opts: True, False or both")
-parser.add_argument("--embeddings_to_combine", nargs='+', default=['siamese_real'], 
+parser.add_argument("--embeddings_to_combine", nargs='+', default=['siamese_real_synthetic'], 
                     help="Image embeddings, specify list")
 parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2_top3k","slicem_edge_list_l1"], help="Name of slicem graph")
 parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")
@@ -464,7 +464,10 @@ for graph_name in graph_name_opts:
                                 image_embeddings = np.load(f)
                         elif embedding_to_combine == 'siamese_real':
                             with open('../results/real_all/real_own_siamese_0.36/siamese_real/siamese_real_reduced_embeddings.npy', 'rb') as f:
-                                image_embeddings = np.load(f)                                 
+                                image_embeddings = np.load(f)       
+                        elif embedding_to_combine == 'siamese_real_synthetic':
+                            with open('../results/real_all/real_siamese_real_synthetic/siamese_real_synthetic/siamese_real_synthetic_reduced_embeddings.npy', 'rb') as f:
+                                image_embeddings = np.load(f)                                  
                         elif embedding_to_combine == 'siamese_more_projs_all':
                             with open('../results/real_all/real_siamese_more_projs_all_efficientnet/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f) 

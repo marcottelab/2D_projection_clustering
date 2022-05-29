@@ -86,7 +86,7 @@ from argparse import ArgumentParser as argparse_ArgumentParser
 
 parser = argparse_ArgumentParser("Input parameters")
 parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
-parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_top3k_l1","slicem_edge_list_l2_top3k","slicem_edge_list_euclidean","slicem_edge_list_l1"], help="Name of slicem graph")
+parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2_5_neigs_paper"], help="Name of slicem graph")
 
 args = parser.parse_args()
         
