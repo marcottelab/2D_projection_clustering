@@ -9,11 +9,13 @@ import networkx as nx
 from networkx.algorithms.community import greedy_modularity_communities
 #from networkx.algorithms.community import  naive_greedy_modularity_communities
 #from networkx.algorithms.community import louvain_communities
-from networkx.algorithms import community
-from networkx.algorithms.community import k_clique_communities
-from networkx.algorithms.community import asyn_lpa_communities, label_propagation_communities, asyn_fluidc
-from cluster_image_embeddings import get_config, read_clusters, evaluate_clusters, evaluate_SLICEM
-import numpy as np
+#from networkx.algorithms import community
+from networkx.algorithms.community import k_clique_communities, asyn_lpa_communities, label_propagation_communities
+# from networkx.algorithms.community import asyn_fluidc
+from input_functions import get_config, read_clusters
+from evaluation_functions import evaluate_SLICEM, evaluate_clusters
+
+#import numpy as np
 import pandas as pd
 import os
 

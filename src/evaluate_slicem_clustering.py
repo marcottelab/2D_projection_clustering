@@ -5,7 +5,8 @@ Created on Thu May 19 15:16:28 2022
 @author: Meghana
 """
 import pandas as pd
-from cluster_image_embeddings import get_config, read_clusters, evaluate_clusters, evaluate_SLICEM
+from input_functions import get_config, read_clusters
+from evaluation_functions import evaluate_SLICEM
 
 dataset = 'real'
 images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset)
