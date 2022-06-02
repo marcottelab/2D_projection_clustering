@@ -95,8 +95,10 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
         if combine_graph_flag:
             graph_vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar',graph_name,'',graph_type)
             vectors = np.hstack((vectors,graph_vectors))
+    elif embedding_model in ['metapath2vec','wys','graphWave','node2vec']:
+        vectors = slicem_graph_embeddings(dataset,embedding_model,'stellar',graph_name,'',graph_type)
     elif embedding_model == 'slicem-graph-' + str(graph_embedding_method):
-        vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar',graph_name,'',graph_type)
+        vectors = slicem_graph_embeddings(dataset,graph_embedding_method,'stellar',graph_name,'',graph_type)        
     elif embedding_model in ['graphSage','attri2vec','gcn','cluster_gcn','gat','APPNP']:
         vectors = slicem_graph_embeddings(dataset,embedding_model,'stellar',graph_name,node_attribute_method,graph_type)
     else:
