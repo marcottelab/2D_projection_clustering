@@ -167,10 +167,11 @@ for fname in walktrap_cluster_files:
     else:
         index_start = 1    
     eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = fname)
+    
     results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = fname))    
  
 #results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True) 
-results_df.sort_values(by='MMR F1 score w/o junk',ascending=False,inplace=True)     
+results_df.sort_values(by='FMM F1 score w/o junk',ascending=False,inplace=True)     
 
 main_results_dir='../results'
 results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/graph_clustering_all_methods_sorted_' + dataset_type + '.csv')

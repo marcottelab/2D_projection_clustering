@@ -324,8 +324,7 @@ def evaluate_embeddings(vectors, image_wise_cluster_labels):
             
     distance_measures = ['braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine', 'dice', 'euclidean',
                          'hamming', 'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 
-                         'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule',
-                         'l1', 'l2', 'manhattan']
+                         'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule']
     
     silhouette_dict = dict()
     best_silhouette = -1
@@ -600,14 +599,14 @@ def main():
     # Main driver
     
     parser = argparse_ArgumentParser("Input parameters")
-    parser.add_argument("--graph_names", nargs='+', default=["slicem_edge_list_l2_top3k","slicem_edge_list_l1"], help="Name of slicem graph, specify as list")
-    parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")    
-    parser.add_argument("--datasets", nargs='+', default=["real"], help="Dataset name, opts: real, synthetic, synthetic_noisy")
-    parser.add_argument("--out_dir_suffixes", nargs='+', default=['_node_embedding'], help="Suffix of output directory:'_combined_externally','_combined_internally' ")
-    parser.add_argument("--node_attribute_methods", nargs='+', default=['siamese_real_synthetic'], help="Image embeddings used as node attributes in the graph embeddings, ex: 'densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'")
+    parser.add_argument("--graph_names", nargs='+', default=["slicem_edge_list_l2"], help="Name of slicem graph, specify as list")
+    parser.add_argument("--graph_types", nargs='+', default=["directed","undirected"],help="Type of graph - directed, undirected or both")    
+    parser.add_argument("--datasets", nargs='+', default=["synthetic_noisy"], help="Dataset name, opts: real, synthetic, synthetic_noisy")
+    parser.add_argument("--out_dir_suffixes", nargs='+', default=[''], help="Suffix of output directory:'_combined_externally','_combined_internally' ")
+    parser.add_argument("--node_attribute_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings, ex: 'densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'")
     parser.add_argument("--graph_embedding_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings")
-    parser.add_argument("--embedding_methods", nargs='+', default=['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'")
-    parser.add_argument("--eval_SLICEM", default=1, help="Evaluate SLICEM results")
+    parser.add_argument("--embedding_methods", nargs='+', default=['metapath2vec','wys','graphWave','node2vec'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'")
+    parser.add_argument("--eval_SLICEM", default=0, help="Evaluate SLICEM results")
     parser.add_argument("--main_results_dir", default="../results", help="Main directory containing results")
     args = parser.parse_args()
 
@@ -865,6 +864,13 @@ def main():
                                 
                                 if len(results_df) == 0:
                                     results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
+                                eval_metrics_dict['Image Embedding Method']  = embedding_method 
+                                eval_metrics_dict['Graph Node Embedding Method']  = str(graph_embedding_method) + node_attribute_method
+                                eval_metrics_dict['Clustering Method']  = str(clustering_method).split('(')[0]
+                                eval_metrics_dict['Clustering Parameters']  = str(clustering_method).split('(')[1][:-1]
+
+
+                                
                                 results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) +' '+ node_attribute_method +  ' embedding ' +  str(clustering_method) + ' clustering'))
                                 
                                 # On test data
@@ -877,6 +883,11 @@ def main():
                                 
                                 if len(results_df) == 0:
                                     test_results_df = pd.DataFrame(columns = test_eval_metrics_dict.keys())
+                                test_eval_metrics_dict['Image Embedding Method']  = embedding_method 
+                                test_eval_metrics_dict['Graph Node Embedding Method']  = str(graph_embedding_method) + node_attribute_method
+                                test_eval_metrics_dict['Clustering Method']  = str(clustering_method).split('(')[0]
+                                test_eval_metrics_dict['Clustering Parameters']  = str(clustering_method).split('(')[1][:-1]
+
                                 test_results_df = test_results_df.append(pd.Series(test_eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) +' '+ node_attribute_method +  ' embedding ' +  str(clustering_method) + ' clustering'))
                 
                     if eval_SLICEM:            
@@ -884,12 +895,17 @@ def main():
                         
                     #results_df.sort_values(by='No. of clusters',key=lambda x: abs(x-n_true_clusters),inplace=True)
                     #results_df.sort_values(by='3 F1 score average',ascending=False,inplace=True)
-                    if ('MMR F1 score' in eval_metrics_dict):
-                        results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)
+                    if ('FMM F1 score' in eval_metrics_dict):
+                        results_df.sort_values(by='FMM F1 score',ascending=False,inplace=True)
                         
-                    if ('MMR F1 score' in test_eval_metrics_dict):
-                        test_results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)            
+                    if ('FMM F1 score' in test_eval_metrics_dict):
+                        test_results_df.sort_values(by='FMM F1 score',ascending=False,inplace=True) 
                         
+                    if ('FMM F1 score w/o junk' in eval_metrics_dict):
+                        results_df.sort_values(by='FMM F1 score w/o junk',ascending=False,inplace=True)
+                        
+                    if ('FMM F1 score w/o junk' in test_eval_metrics_dict):
+                        test_results_df.sort_values(by='FMM F1 score w/o junk',ascending=False,inplace=True)                             
                     # check results stability
                     
                     embedding_eval_df.to_csv(main_results_dir + '/' + out_dir_orig + '/evaluating_embeddings_' + dataset + '.csv')
