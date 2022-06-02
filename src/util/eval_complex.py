@@ -12,7 +12,7 @@ from logging import info as logging_info
 from matplotlib.pyplot import figure as plt_figure, savefig as plt_savefig, close as plt_close, xlabel as plt_xlabel, title as plt_title, plot as plt_plot,ylabel as plt_ylabel, rc as plt_rc, rcParams as plt_rcParams
 #from convert_humap_ids2names import convert2names_wscores_matches
 from collections import Counter
-from util.test_F1_FMM import f1_FMM
+from util.test_F1_FMM import f1_fmm
 
 
 def write_best_matches(best_matches_for_known,out_comp_nm,dir_nm,suffix,write_comp_score=0,gt_names=[]):
@@ -173,7 +173,7 @@ def plot_pr_curve_FMM(Metric,fin_list_graphs,out_comp_nm):
     for thres in thresholds:
         # list of indices with scores greater than the threshold
         col_inds = [j for j,score in enumerate(scores_list) if score >= thres]
-        prec_FMM, recall_FMM, f1_FMM, max_matching_edges = f1_FMM(Metric[:,col_inds])
+        prec_FMM, recall_FMM, f1_FMM, max_matching_edges = f1_fmm(Metric[:,col_inds])
         
         precs.append(prec_FMM)
         recalls.append(recall_FMM)
@@ -260,7 +260,7 @@ def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_te
     
     write_best_matches_best4pred(best_matches_4predicted,out_comp_nm,dir_nm,'_best4predicted' + suffix)
 
-    prec_FMM, recall_FMM, f1_FMM, max_matching_edges = f1_FMM(Metric)
+    prec_FMM, recall_FMM, f1_FMM, max_matching_edges = f1_fmm(Metric)
     
     if plot_pr_flag:
         plot_pr_curve_FMM(Metric,fin_list_graphs,out_comp_nm+suffix)
