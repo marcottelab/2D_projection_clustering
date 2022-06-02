@@ -575,8 +575,8 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
                 results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
             results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) + ' '+ node_attribute_method + ' embedding ' +  cluster_method_str + ' clustering'))
 
-    if ('MMR F1 score' in eval_metrics_dict):
-        results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)
+    if ('FMM F1 score' in eval_metrics_dict):
+        results_df.sort_values(by='FMM F1 score',ascending=False,inplace=True)
         
     best_method = results_df.index[0]
     logger.info('Best method {}',best_method)
@@ -589,8 +589,8 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
         results_other_embeddings = pd.read_csv(results_other_embeddings_path,index_col=0)
         results_df = pd.concat([results_other_embeddings,results_df])    
         
-    if ('MMR F1 score' in eval_metrics_dict):
-        results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)        
+    if ('FMM F1 score' in eval_metrics_dict):
+        results_df.sort_values(by='FMM F1 score',ascending=False,inplace=True)        
     
     results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/hyperparameter_opt_all_methods_sorted_' + dataset + '.csv')
     
