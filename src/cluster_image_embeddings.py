@@ -31,7 +31,7 @@ from util.input_functions import get_config, read_clusters, read_data
 from util.evaluation_functions import evaluate_SLICEM, evaluate_clusters
 
 from siamese_embedding import siamese_embedding
-from read_node2vec_embeddings import slicem_graph_embeddings
+from read_node_embeddings import slicem_graph_embeddings
 
 #from clusteval import clusteval
 #from matplotlib import cm
