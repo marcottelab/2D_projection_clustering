@@ -32,7 +32,6 @@ from matplotlib import pyplot as plt
 from sklearn import model_selection
 from sklearn.linear_model import LogisticRegression
 from sklearn.manifold import TSNE
-from IPython.display import display, HTML
 
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
@@ -185,7 +184,6 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
             from stellargraph import globalvar
             
             from stellargraph import datasets
-            from IPython.display import display, HTML
             
             nodes = list(G.nodes())
             number_of_walks = 1
@@ -261,7 +259,6 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
             from sklearn.metrics import accuracy_score
             
             from stellargraph import datasets
-            from IPython.display import display, HTML
             nodes = list(G.nodes())
             number_of_walks = 4
             length = 5
@@ -415,11 +412,10 @@ from argparse import ArgumentParser as argparse_ArgumentParser
 
 parser = argparse_ArgumentParser("Input parameters")
 parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
-parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True], help="Flag to combine image embeddings with graph, opts: True, False or both")
-parser.add_argument("--embeddings_to_combine", nargs='+', default=['siamese_real_synthetic'], 
-                    help="Image embeddings, specify list")
-parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2_top3k","slicem_edge_list_l1"], help="Name of slicem graph")
-parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")
+parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True, False], help="Flag to combine image embeddings with graph, opts: True, False or both")
+parser.add_argument("--embeddings_to_combine", nargs='+', default=['densenet','siamese','vgg','alexnet','siamese_real','siamese_noisy','siamese_more_projs_noisy','siamese_more_projs_all','efficientnet_b1','efficientnet_b7','siamese_real_synthetic'], help="Image embeddings, specify list")
+parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_l1_5_neigs_paper_disc"], help="Name of slicem graph")
+parser.add_argument("--graph_types", nargs='+', default=["directed","undirected"],help="Type of graph - directed, undirected or both")
 
 args = parser.parse_args()
     

@@ -21,10 +21,11 @@ import os
 
 
 def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_results_dir='../results'):
+    print(graph_type)
     if not nx.is_directed(graph):
-        clustering_methods = ['greedy_modularity','kclique','async','label_prop']
+        clustering_methods = ['kclique','async','label_prop','greedy_modularity']
     else:
-        clustering_methods = ['greedy_modularity','async']
+        clustering_methods = ['async','greedy_modularity']
 
     results_df = pd.DataFrame()
 
@@ -41,7 +42,10 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
     
     for clustering_method in clustering_methods:    
         if clustering_method == 'greedy_modularity':
-            c = greedy_modularity_communities(graph,weight='weight') # 1 community
+            try:
+                c = greedy_modularity_communities(graph,weight='weight') # 1 community
+            except:
+                continue
         elif clustering_method == 'kclique':
             c = list(k_clique_communities(graph,k=2)) # 1 community
         elif clustering_method == 'async':

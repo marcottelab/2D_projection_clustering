@@ -600,11 +600,11 @@ def main():
     # Main driver
     
     parser = argparse_ArgumentParser("Input parameters")
-    parser.add_argument("--graph_names", nargs='+', default=["slicem_edge_list_l2_top3k","slicem_edge_list_l1"], help="Name of slicem graph, specify as list")
-    parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")    
+    parser.add_argument("--graph_names", nargs='+', default=["slicem_l1_5_neigs_paper_disc"], help="Name of slicem graph, specify as list")
+    parser.add_argument("--graph_types", nargs='+', default=["directed","undirected"],help="Type of graph - directed, undirected or both")    
     parser.add_argument("--datasets", nargs='+', default=["real"], help="Dataset name, opts: real, synthetic, synthetic_noisy")
     parser.add_argument("--out_dir_suffixes", nargs='+', default=['_node_embedding'], help="Suffix of output directory:'_combined_externally','_combined_internally' ")
-    parser.add_argument("--node_attribute_methods", nargs='+', default=['siamese_real_synthetic'], help="Image embeddings used as node attributes in the graph embeddings, ex: 'densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'")
+    parser.add_argument("--node_attribute_methods", nargs='+', default=['densenet','siamese','vgg','alexnet','siamese_real','siamese_noisy','siamese_more_projs_noisy','siamese_more_projs_all','efficientnet_b1','efficientnet_b7','siamese_real_synthetic'], help="Image embeddings used as node attributes in the graph embeddings, ex: 'densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'")
     parser.add_argument("--graph_embedding_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings")
     parser.add_argument("--embedding_methods", nargs='+', default=['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'")
     parser.add_argument("--eval_SLICEM", default=1, help="Evaluate SLICEM results")
