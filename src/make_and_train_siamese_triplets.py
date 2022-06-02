@@ -31,13 +31,10 @@ faulthandler.enable()
 def get_image_triples(dataset_name, target_shape):
     images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset_name)
 
-        
     data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep, sep2)
 
     if len(target_shape) == 0:
         target_shape = data[0].shape
-
-
 
     logger.info('Lenth of data {}',len(data))
     logger.info('Lenth of complexes {}',len(gt_lines))

@@ -12,7 +12,7 @@ import networkx as nx
 
 
 
-def f1_mmr(wt_mat):
+def f1_FMM(wt_mat):
     wt_mat = - wt_mat
     
     nr, nc = np.shape(wt_mat)

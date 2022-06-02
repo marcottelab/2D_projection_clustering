@@ -12,7 +12,7 @@ from logging import info as logging_info
 from matplotlib.pyplot import figure as plt_figure, savefig as plt_savefig, close as plt_close, xlabel as plt_xlabel, title as plt_title, plot as plt_plot,ylabel as plt_ylabel, rc as plt_rc, rcParams as plt_rcParams
 #from convert_humap_ids2names import convert2names_wscores_matches
 from collections import Counter
-from util.test_F1_MMR import f1_mmr
+from util.test_F1_FMM import f1_FMM
 
 
 def write_best_matches(best_matches_for_known,out_comp_nm,dir_nm,suffix,write_comp_score=0,gt_names=[]):
@@ -159,7 +159,7 @@ def plot_f1_scores(best_matches,out_comp_nm,suffix,prefix,plot_hist_flag=1):
     return avged_f1_score
             
     
-def plot_pr_curve_mmr(Metric,fin_list_graphs,out_comp_nm):
+def plot_pr_curve_FMM(Metric,fin_list_graphs,out_comp_nm):
     
     n_divs = 10
     scores_list = [float(pred_complex[1]) for pred_complex in fin_list_graphs]
@@ -173,17 +173,17 @@ def plot_pr_curve_mmr(Metric,fin_list_graphs,out_comp_nm):
     for thres in thresholds:
         # list of indices with scores greater than the threshold
         col_inds = [j for j,score in enumerate(scores_list) if score >= thres]
-        prec_MMR, recall_MMR, f1_MMR, max_matching_edges = f1_mmr(Metric[:,col_inds])
+        prec_FMM, recall_FMM, f1_FMM, max_matching_edges = f1_FMM(Metric[:,col_inds])
         
-        precs.append(prec_MMR)
-        recalls.append(recall_MMR)
+        precs.append(prec_FMM)
+        recalls.append(recall_FMM)
         
     fig = plt_figure()
     plt_plot(recalls,precs,'.-')
     plt_ylabel("Precision")
     plt_xlabel("Recall")
-    plt_title("PR curve for MMR measure")
-    plt_savefig(out_comp_nm + '_pr_mmr.png')
+    plt_title("PR curve for FMM measure")
+    plt_savefig(out_comp_nm + '_pr_FMM.png')
     plt_close(fig)    
     
 
@@ -260,14 +260,14 @@ def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_te
     
     write_best_matches_best4pred(best_matches_4predicted,out_comp_nm,dir_nm,'_best4predicted' + suffix)
 
-    prec_MMR, recall_MMR, f1_MMR, max_matching_edges = f1_mmr(Metric)
+    prec_FMM, recall_FMM, f1_FMM, max_matching_edges = f1_FMM(Metric)
     
     if plot_pr_flag:
-        plot_pr_curve_mmr(Metric,fin_list_graphs,out_comp_nm+suffix)
+        plot_pr_curve_FMM(Metric,fin_list_graphs,out_comp_nm+suffix)
     
     n_matches = int(len(max_matching_edges)/2)
     
-    return avg_f1_score, net_f1_score,PPV,Sn,acc_unbiased,prec_MMR, recall_MMR, f1_MMR, n_matches
+    return avg_f1_score, net_f1_score,PPV,Sn,acc_unbiased,prec_FMM, recall_FMM, f1_FMM, n_matches
 
 def f1_qi(Metric):
     max_i = Metric.max(axis=0)
@@ -386,14 +386,14 @@ def compute_metrics(known_complex_nodes_list, fin_list_graphs,out_comp_nm,N_test
     if N_test_comp != 0 and N_pred_comp != 0:
         Precision, Recall, F1_score = node_comparison_prec_recall(known_complex_nodes_list,fin_list_graphs, N_pred_comp, N_test_comp, inputs["eval_p"],out_comp_nm+suffix)
         
-        avg_f1_score, net_f1_score,PPV,Sn,acc_unbiased,prec_MMR, recall_MMR, f1_MMR,n_matches = one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp,out_comp_nm,suffix,inputs['dir_nm'],0,gt_names,plot_hist_flag)
+        avg_f1_score, net_f1_score,PPV,Sn,acc_unbiased,prec_FMM, recall_FMM, f1_FMM,n_matches = one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp,out_comp_nm,suffix,inputs['dir_nm'],0,gt_names,plot_hist_flag)
         
         with open(out_comp_nm + '_metrics.txt', "a") as fid:
-            print("No. of matches in MMR = ", n_matches, file=fid)            
-            print("MMR Precision = %.3f" % prec_MMR, file=fid)
-            print("MMR Recall = %.3f" % recall_MMR, file=fid)
-            print("MMR F1 score = %.3f" % f1_MMR, file=fid)               
-            print("Net F1 score = %.3f" % net_f1_score, file=fid)   
+            print("No. of matches in FMM = ", n_matches, file=fid)            
+            print("FMM Precision = %.3f" % prec_FMM, file=fid)
+            print("FMM Recall = %.3f" % recall_FMM, file=fid)
+            print("FMM F1 score = %.3f" % f1_FMM, file=fid)               
+            print("CMFF = %.3f" % net_f1_score, file=fid)   
             print("Unbiased PPV = %.3f" % PPV, file=fid)
             print("Unbiased Sn = %.3f" % Sn, file=fid)
             print("Unbiased accuracy= %.3f" % acc_unbiased, file=fid)             
@@ -402,7 +402,7 @@ def compute_metrics(known_complex_nodes_list, fin_list_graphs,out_comp_nm,N_test
             print("Prediction Recall = %.3f" % Recall, file=fid)
             print("Prediction F1 score = %.3f" % F1_score, file=fid)    
             
-        eval_metrics_dict = {"No. of matches in MMR": n_matches,"MMR Precision":prec_MMR,"MMR Recall":recall_MMR,"MMR F1 score":f1_MMR,"Net F1 score":net_f1_score,"Qi Precision": Precision,"Qi Recall":Recall,"Qi F1 score":F1_score}
+        eval_metrics_dict = {"No. of matches in FMM": n_matches,"FMM Precision":prec_FMM,"FMM Recall":recall_FMM,"FMM F1 score":f1_FMM,"CMFF":net_f1_score,"Qi Precision": Precision,"Qi Recall":Recall,"Qi F1 score":F1_score}
     return eval_metrics_dict
     
 def eval_complex(rf=0, rf_nm=0, inputs={}, known_complex_nodes_list=[], prot_list=[], fin_list_graphs=[],suffix="both"):

@@ -41,8 +41,8 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
             
         eval_metrics_dict["No. of clusters"] = n_clus
             
-        if ('MMR F1 score' in eval_metrics_dict) and ('Net F1 score' in eval_metrics_dict) and ('Qi F1 score' in eval_metrics_dict):
-            eval_metrics_dict['3 F1 score average'] = (eval_metrics_dict['MMR F1 score'] + eval_metrics_dict['Net F1 score'] + eval_metrics_dict['Qi F1 score'])/3.0
+        if ('FMM F1 score' in eval_metrics_dict) and ('Net F1 score' in eval_metrics_dict) and ('Qi F1 score' in eval_metrics_dict):
+            eval_metrics_dict['3 F1 score average'] = (eval_metrics_dict['FMM F1 score'] + eval_metrics_dict['Net F1 score'] + eval_metrics_dict['Qi F1 score'])/3.0
 
     # After removing unknown projections
     prot_list = set().union(*gt_lines)
@@ -56,11 +56,14 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
         
     eval_metrics_dict_1["No. of clusters"] = n_clus_new
         
-    if ('MMR F1 score' in eval_metrics_dict) and ('Net F1 score' in eval_metrics_dict) and ('Qi F1 score' in eval_metrics_dict):
-        eval_metrics_dict_1['3 F1 score average'] = (eval_metrics_dict_1['MMR F1 score'] + eval_metrics_dict_1['Net F1 score'] + eval_metrics_dict_1['Qi F1 score'])/3.0
+    if ('FMM F1 score' in eval_metrics_dict) and ('Net F1 score' in eval_metrics_dict) and ('Qi F1 score' in eval_metrics_dict):
+        eval_metrics_dict_1['3 F1 score average'] = (eval_metrics_dict_1['FMM F1 score'] + eval_metrics_dict_1['Net F1 score'] + eval_metrics_dict_1['Qi F1 score'])/3.0
         
     for key, val in eval_metrics_dict_1.items():
         eval_metrics_dict[key+ ' w/o junk'] = val
+            
+    if ('FMM F1 score w/o junk' in eval_metrics_dict):
+        eval_metrics_dict['FMM F1 score w/o junk']  = eval_metrics_dict.pop('FMM F1 score w/o junk')            
 
     return eval_metrics_dict
 
@@ -101,6 +104,8 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
     
     eval_metrics_dict = evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,'SLICEM',out_dir,n_true_clus,gt_names,main_results_dir)
     eval_metrics_dict['Silhouette score'] = 'NA'
+
+    
     return eval_metrics_dict
 
 
