@@ -909,7 +909,10 @@ def main():
                     if ('FMM F1 score w/o junk' in test_eval_metrics_dict):
                         test_results_df.sort_values(by='FMM F1 score w/o junk',ascending=False,inplace=True)                             
                     # check results stability
-                    
+
+                    embedding_eval_df = embedding_eval_df.round(3)
+                    test_results_df = test_results_df.round(3)
+                    results_df = results_df.round(3)
                     embedding_eval_df.to_csv(main_results_dir + '/' + out_dir_orig + '/evaluating_embeddings_' + dataset + '.csv')
                     
                     test_results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/compiled_test_results_all_methods_sorted_' + dataset + '.csv')
