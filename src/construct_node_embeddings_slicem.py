@@ -411,10 +411,10 @@ def cluster_reorder(sequence, subjects):
 from argparse import ArgumentParser as argparse_ArgumentParser
 
 parser = argparse_ArgumentParser("Input parameters")
-parser.add_argument("--dataset_type", default="synthetic_more_projs", help="Dataset name, opts: real, synthetic, synthetic_noisy")
+parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
 parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True, False], help="Flag to combine image embeddings with graph, opts: True, False or both")
-parser.add_argument("--embeddings_to_combine", nargs='+', default=['siamese_more_projs'], help="Image embeddings, specify list")
-parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list"], help="Name of slicem graph")
+parser.add_argument("--embeddings_to_combine", nargs='+', default=['siamese','siamese_real','siamese_real_synthetic','siamese_more_negs','siamese_more_projs_wo_4v6c','siamese_noisy','siamese_more_projs_noisy','densenet','vgg','alexnet','efficientnet_b1','efficientnet_b7','resnet-18'], help="Image embeddings, specify list")
+parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_top3k_l1"], help="Name of slicem graph")
 parser.add_argument("--graph_types", nargs='+', default=["directed","undirected"],help="Type of graph - directed, undirected or both")
 
 args = parser.parse_args()
@@ -455,7 +455,7 @@ for graph_name in graph_name_opts:
                 # Read image node embeddings as features
                 for embedding_to_combine in embeddings_to_combine:
                     if dataset_type == 'real':
-                        if embedding_to_combine in ['siamese','siamese_noisy','siamese_more_projs_noisy']:
+                        if embedding_to_combine in ['siamese','siamese_noisy','siamese_more_projs_noisy','siamese_more_negs']:
                             with open('../results/real_all/real_siamese_transferred/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)
                         elif embedding_to_combine == 'siamese_real':
