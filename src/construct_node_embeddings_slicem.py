@@ -478,10 +478,10 @@ for graph_name in graph_name_opts:
                             image_embeddings = np.load(f)                              
                     else: # synthetic
                         if embedding_to_combine in ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']:
-                            with open('../results/synthetic_all/synthetic_big_siamese_and_efficientnet/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                            with open('../results/synthetic_all/synthetic_big_siamese_and_efficientnet_0.33/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)   
                         else:                    
-                            with open('../results/synthetic_all/synthetic_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                            with open('../results/synthetic_all/synthetic_original_replicate_0.42/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
                                 image_embeddings = np.load(f)
                             
                     node_data = pd.DataFrame(image_embeddings,index=[str(num) for num in range(len(image_embeddings))])
