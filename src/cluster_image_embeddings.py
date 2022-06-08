@@ -80,8 +80,8 @@ def get_image_embedding(data,embedding_model = 'resnet-18',combine_graph_flag=0,
             vectors = np.hstack((vectors,graph_vectors))
             logger.info('Stacked image + graph embedding array shape: {}',np.shape(vectors))
             
-    elif embedding_model in ['siamese','siamese_noisy','siamese_more_projs_all','siamese_more_projs_noisy','siamese_real','siamese_real_synthetic']:
-        if embedding_model in ['siamese_more_projs_all','siamese_more_projs_noisy','siamese_real_synthetic']:
+    elif embedding_model in ['siamese','siamese_noisy','siamese_more_projs_all','siamese_more_projs_noisy','siamese_real','siamese_real_synthetic','siamese_more_projs_wo_4v6c']:
+        if embedding_model in ['siamese_more_projs_all','siamese_more_projs_noisy','siamese_real_synthetic','siamese_more_projs_wo_4v6c']:
             correct_dims = (100, 100)
         elif embedding_model == 'siamese_real':
             correct_dims = (96, 96)
@@ -601,14 +601,14 @@ def main():
     # Main driver
     
     parser = argparse_ArgumentParser("Input parameters")
-    parser.add_argument("--graph_names", nargs='+', default=["slicem_edge_list_l2"], help="Name of slicem graph, specify as list")
-    parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")    
-    parser.add_argument("--datasets", nargs='+', default=["synthetic_noisy"], help="Dataset name, opts: real, synthetic, synthetic_noisy")
-    parser.add_argument("--out_dir_suffixes", nargs='+', default=['_combined_externally'], help="Suffix of output directory:'_combined_externally','_combined_internally' ")
+    parser.add_argument("--graph_names", nargs='+', default=["slicem_edge_list"], help="Name of slicem graph, specify as list")
+    parser.add_argument("--graph_types", nargs='+', default=["directed","undirected"],help="Type of graph - directed, undirected or both")    
+    parser.add_argument("--datasets", nargs='+', default=["synthetic_more_projs"], help="Dataset name, opts: real, synthetic, synthetic_noisy")
+    parser.add_argument("--out_dir_suffixes", nargs='+', default=['_combined_externally','_combined_internally'], help="Suffix of output directory:'_combined_externally','_combined_internally' ")
     parser.add_argument("--node_attribute_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings, ex: 'densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'")
     parser.add_argument("--graph_embedding_methods", nargs='+', default=['metapath2vec','wys','graphWave','node2vec'], help="Image embeddings used as node attributes in the graph embeddings")
-    parser.add_argument("--embedding_methods", nargs='+', default=['siamese_noisy'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'")
-    parser.add_argument("--eval_SLICEM", default=0, help="Evaluate SLICEM results")
+    parser.add_argument("--embedding_methods", nargs='+', default=['siamese_more_projs_all'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'")
+    parser.add_argument("--eval_SLICEM", default=1, help="Evaluate SLICEM results")
     parser.add_argument("--main_results_dir", default="../results", help="Main directory containing results")
     args = parser.parse_args()
 
