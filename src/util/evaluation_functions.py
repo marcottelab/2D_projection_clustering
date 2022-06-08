@@ -86,8 +86,10 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
         out_dir = 'data/synthetic_dataset'        
     elif dataset == 'synthetic_more_projs_noisy':
         out_dir = 'data/synthetic_more_projs_noisy_dataset'       
+    elif dataset == 'synthetic_more_projs_wo_4v6c':
+        out_dir = 'data/synthetic_more_projs_wo_4v6c_dataset'       
     elif dataset == 'synthetic_more_projs':
-        out_dir = 'data/synthetic_more_projections'       
+        out_dir = 'data/synthetic_more_projs_dataset'       
     elif dataset == 'synthetic_noisy':
         out_dir = 'data/synthetic_noisy_dataset'           
     else: # real 
