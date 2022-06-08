@@ -54,7 +54,7 @@ def main():
     final_scores = {}
     
     emb_name = args.embedding
-    fname = '../results/synthetic_original_replicate/'+emb_name+'/'+emb_name+'_reduced_embeddings.npy'
+    fname = '../results/synthetic_original_replicate_0.42/'+emb_name+'/'+emb_name+'_reduced_embeddings.npy'
     embeddings = np.load(fname)
     num_class_avg = len(embeddings)
     
