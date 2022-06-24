@@ -4,18 +4,39 @@ Created on Thu Dec  5 15:37:24 2019
 
 @author: Meghana
 """
-
-#from seaborn import distplot as sns_distplot
 from seaborn import displot as sns_displot
 from numpy import zeros as np_zeros, count_nonzero as np_count_nonzero, sum as np_sum, argmax as np_argmax, sqrt as np_sqrt
 from logging import info as logging_info
 from matplotlib.pyplot import figure as plt_figure, savefig as plt_savefig, close as plt_close, xlabel as plt_xlabel, title as plt_title, plot as plt_plot,ylabel as plt_ylabel, rc as plt_rc, rcParams as plt_rcParams
-#from convert_humap_ids2names import convert2names_wscores_matches
+from convert_humap_ids2names import convert2names_wscores_matches
 from collections import Counter
 from util.test_F1_FMM import f1_fmm
 
 
 def write_best_matches(best_matches_for_known,out_comp_nm,dir_nm,suffix,write_comp_score=0,gt_names=[]):
+    '''
+    
+
+    Parameters
+    ----------
+    best_matches_for_known : TYPE
+        DESCRIPTION.
+    out_comp_nm : TYPE
+        DESCRIPTION.
+    dir_nm : TYPE
+        DESCRIPTION.
+    suffix : TYPE
+        DESCRIPTION.
+    write_comp_score : TYPE, optional
+        DESCRIPTION. The default is 0.
+    gt_names : TYPE, optional
+        DESCRIPTION. The default is [].
+
+    Returns
+    -------
+    None.
+
+    '''
 
     if len(gt_names) == len(best_matches_for_known):
         sorted_matches_zip = sorted(list(zip(best_matches_for_known,gt_names)),key=lambda x: x[0][2],reverse=True)
@@ -69,6 +90,27 @@ def write_best_matches(best_matches_for_known,out_comp_nm,dir_nm,suffix,write_co
 
 
 def write_best_matches_best4pred(best_matches_for_known,out_comp_nm,dir_nm,suffix,write_comp_score=0):
+    '''
+    
+
+    Parameters
+    ----------
+    best_matches_for_known : TYPE
+        DESCRIPTION.
+    out_comp_nm : TYPE
+        DESCRIPTION.
+    dir_nm : TYPE
+        DESCRIPTION.
+    suffix : TYPE
+        DESCRIPTION.
+    write_comp_score : TYPE, optional
+        DESCRIPTION. The default is 0.
+
+    Returns
+    -------
+    None.
+
+    '''
     if len(best_matches_for_known[0]) == 5:
         name_flag = 1
     else:
@@ -117,8 +159,31 @@ def write_best_matches_best4pred(best_matches_for_known,out_comp_nm,dir_nm,suffi
                 fn_write("%.3f" % float(complex_score))            
             fn_write("\n")
             
+            
 def plot_f1_scores(best_matches,out_comp_nm,suffix,prefix,plot_hist_flag=1):
-    # plot histogram of F1 scores
+    '''
+    
+    Plot histogram of F1 scores
+
+    Parameters
+    ----------
+    best_matches : TYPE
+        DESCRIPTION.
+    out_comp_nm : TYPE
+        DESCRIPTION.
+    suffix : TYPE
+        DESCRIPTION.
+    prefix : TYPE
+        DESCRIPTION.
+    plot_hist_flag : TYPE, optional
+        DESCRIPTION. The default is 1.
+
+    Returns
+    -------
+    avged_f1_score : TYPE
+        DESCRIPTION.
+
+    '''
     max_f1_scores = [match[2] for match in best_matches]
     
     avged_f1_score = sum(max_f1_scores)/float(len(max_f1_scores))
@@ -160,6 +225,23 @@ def plot_f1_scores(best_matches,out_comp_nm,suffix,prefix,plot_hist_flag=1):
             
     
 def plot_pr_curve_FMM(Metric,fin_list_graphs,out_comp_nm):
+    '''
+    
+
+    Parameters
+    ----------
+    Metric : TYPE
+        DESCRIPTION.
+    fin_list_graphs : TYPE
+        DESCRIPTION.
+    out_comp_nm : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
     
     n_divs = 10
     scores_list = [float(pred_complex[1]) for pred_complex in fin_list_graphs]
@@ -188,6 +270,24 @@ def plot_pr_curve_FMM(Metric,fin_list_graphs,out_comp_nm):
     
 
 def f1_similarity(P,T):
+    '''
+    
+
+    Parameters
+    ----------
+    P : TYPE
+        DESCRIPTION.
+    T : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+    C : TYPE
+        DESCRIPTION.
+
+    '''
     C = len(T.intersection(P))
     
     if len(P) == 0 or len(T) == 0:
@@ -205,7 +305,37 @@ def f1_similarity(P,T):
 
 
 def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp,out_comp_nm,suffix,dir_nm,plot_pr_flag=0,gt_names=[],plot_hist_flag=1):
+    '''
+    
 
+    Parameters
+    ----------
+    known_complex_nodes_list : TYPE
+        DESCRIPTION.
+    fin_list_graphs : TYPE
+        DESCRIPTION.
+    N_pred_comp : TYPE
+        DESCRIPTION.
+    N_test_comp : TYPE
+        DESCRIPTION.
+    out_comp_nm : TYPE
+        DESCRIPTION.
+    suffix : TYPE
+        DESCRIPTION.
+    dir_nm : TYPE
+        DESCRIPTION.
+    plot_pr_flag : TYPE, optional
+        DESCRIPTION. The default is 0.
+    gt_names : TYPE, optional
+        DESCRIPTION. The default is [].
+    plot_hist_flag : TYPE, optional
+        DESCRIPTION. The default is 1.
+
+    Returns
+    -------
+    None.
+
+    '''
     Metric = np_zeros((N_test_comp, N_pred_comp))
     Common_nodes = np_zeros((N_test_comp, N_pred_comp))
     known_comp_lens = np_zeros((N_test_comp, 1))
@@ -269,7 +399,24 @@ def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_te
     
     return avg_f1_score, net_f1_score,PPV,Sn,acc_unbiased,prec_FMM, recall_FMM, f1_FMM, n_matches
 
+
 def f1_qi(Metric):
+    '''
+    
+
+    Parameters
+    ----------
+    Metric : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    prec : TYPE
+        DESCRIPTION.
+    recall : TYPE
+        DESCRIPTION.
+
+    '''
     max_i = Metric.max(axis=0)
     prec = sum(max_i)/len(max_i)
     
@@ -280,6 +427,23 @@ def f1_qi(Metric):
 
 
 def plot_pr_curve_orig(Metric,fin_list_graphs,out_comp_nm):
+    '''
+    
+
+    Parameters
+    ----------
+    Metric : TYPE
+        DESCRIPTION.
+    fin_list_graphs : TYPE
+        DESCRIPTION.
+    out_comp_nm : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
     
     n_divs = 10
     scores_list = [float(pred_complex[1]) for pred_complex in fin_list_graphs]
@@ -309,6 +473,36 @@ def plot_pr_curve_orig(Metric,fin_list_graphs,out_comp_nm):
     
     
 def node_comparison_prec_recall(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp, p, out_comp_nm,plot_pr_flag=False):
+    '''
+    
+
+    Parameters
+    ----------
+    known_complex_nodes_list : TYPE
+        DESCRIPTION.
+    fin_list_graphs : TYPE
+        DESCRIPTION.
+    N_pred_comp : TYPE
+        DESCRIPTION.
+    N_test_comp : TYPE
+        DESCRIPTION.
+    p : TYPE
+        DESCRIPTION.
+    out_comp_nm : TYPE
+        DESCRIPTION.
+    plot_pr_flag : TYPE, optional
+        DESCRIPTION. The default is False.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+
+    '''
     N_matches_test = 0
 
     Metric = np_zeros((N_test_comp, N_pred_comp))
@@ -346,7 +540,27 @@ def node_comparison_prec_recall(known_complex_nodes_list, fin_list_graphs, N_pre
 
     return Precision, Recall, F1_score
 
+
 def plot_size_dists(known_complex_nodes_list, fin_list_graphs, sizes_orig, out_comp_nm):
+    '''
+    
+
+    Parameters
+    ----------
+    known_complex_nodes_list : TYPE
+        DESCRIPTION.
+    fin_list_graphs : TYPE
+        DESCRIPTION.
+    sizes_orig : TYPE
+        DESCRIPTION.
+    out_comp_nm : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
     sizes_known = [len(comp) for comp in known_complex_nodes_list]
     # Size distributions
     sizes_new = [len(comp[0]) for comp in fin_list_graphs]
@@ -370,7 +584,25 @@ def plot_size_dists(known_complex_nodes_list, fin_list_graphs, sizes_orig, out_c
 
 
 def remove_unknown_prots(fin_list_graphs_orig, prot_list, min_len = 3):
-    # Remove all proteins in predicted complexes that are not present in known complex protein list
+    '''
+    Remove all proteins in predicted complexes that are not present in known complex protein list
+    
+
+    Parameters
+    ----------
+    fin_list_graphs_orig : TYPE
+        DESCRIPTION.
+    prot_list : TYPE
+        DESCRIPTION.
+    min_len : TYPE, optional
+        DESCRIPTION. The default is 3.
+
+    Returns
+    -------
+    fin_list_graphs : TYPE
+        DESCRIPTION.
+
+    '''
     fin_list_graphs = []
     for comp in fin_list_graphs_orig:
         comp = (comp[0].intersection(prot_list), comp[1])
@@ -381,6 +613,36 @@ def remove_unknown_prots(fin_list_graphs_orig, prot_list, min_len = 3):
 
 
 def compute_metrics(known_complex_nodes_list, fin_list_graphs,out_comp_nm,N_test_comp,N_pred_comp,inputs,suffix,gt_names,plot_hist_flag=1):
+    '''
+    
+
+    Parameters
+    ----------
+    known_complex_nodes_list : TYPE
+        DESCRIPTION.
+    fin_list_graphs : TYPE
+        DESCRIPTION.
+    out_comp_nm : TYPE
+        DESCRIPTION.
+    N_test_comp : TYPE
+        DESCRIPTION.
+    N_pred_comp : TYPE
+        DESCRIPTION.
+    inputs : TYPE
+        DESCRIPTION.
+    suffix : TYPE
+        DESCRIPTION.
+    gt_names : TYPE
+        DESCRIPTION.
+    plot_hist_flag : TYPE, optional
+        DESCRIPTION. The default is 1.
+
+    Returns
+    -------
+    eval_metrics_dict : TYPE
+        DESCRIPTION.
+
+    '''
     eval_metrics_dict = dict()
 
     if N_test_comp != 0 and N_pred_comp != 0:
@@ -405,8 +667,33 @@ def compute_metrics(known_complex_nodes_list, fin_list_graphs,out_comp_nm,N_test
         eval_metrics_dict = {"No. of matches in FMM": n_matches,"FMM Precision":prec_FMM,"FMM Recall":recall_FMM,"FMM F1 score":f1_FMM,"CMFF":net_f1_score,"Qi Precision": Precision,"Qi Recall":Recall,"Qi F1 score":F1_score}
     return eval_metrics_dict
     
+
 def eval_complex(rf=0, rf_nm=0, inputs={}, known_complex_nodes_list=[], prot_list=[], fin_list_graphs=[],suffix="both"):
-    # rf - read flag to read complexes from file
+    '''
+    
+
+    Parameters
+    ----------
+    rf : TYPE, optional
+        read flag to read complexes from file. The default is 0.
+    rf_nm : TYPE, optional
+        DESCRIPTION. The default is 0.
+    inputs : TYPE, optional
+        DESCRIPTION. The default is {}.
+    known_complex_nodes_list : TYPE, optional
+        DESCRIPTION. The default is [].
+    prot_list : TYPE, optional
+        DESCRIPTION. The default is [].
+    fin_list_graphs : TYPE, optional
+        DESCRIPTION. The default is [].
+    suffix : TYPE, optional
+        DESCRIPTION. The default is "both".
+
+    Returns
+    -------
+    None.
+
+    '''
     logging_info("Evaluating complexes..." + suffix)
     out_comp_nm = inputs['dir_nm'] + inputs['out_comp_nm']
     

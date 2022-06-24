@@ -5,30 +5,46 @@ Created on Fri Dec 10 15:59:42 2021
 @author: Meghana
 """
 from util.input_functions import get_config, read_data
-
 from itertools import combinations
-import random
-
 from PIL import Image
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import random
-import tensorflow as tf
-from pathlib import Path
-from tensorflow.keras import applications
 from tensorflow.keras import layers
-from tensorflow.keras import losses
 from tensorflow.keras import optimizers
 from tensorflow.keras import metrics
 from tensorflow.keras import Model
 from tensorflow.keras.applications import resnet
 from loguru import logger
+
+import random
+import numpy as np
+import os
+import tensorflow as tf
 import pickle
 import faulthandler 
 
 faulthandler.enable()
+
+
 def get_image_triples(dataset_name, target_shape):
+    '''
+    
+
+    Parameters
+    ----------
+    dataset_name : TYPE
+        DESCRIPTION.
+    target_shape : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    anchor_images : TYPE
+        DESCRIPTION.
+    positive_images : TYPE
+        DESCRIPTION.
+    negative_images : TYPE
+        DESCRIPTION.
+
+    '''
     images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset_name)
 
     data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep, sep2)
@@ -82,6 +98,24 @@ def get_image_triples(dataset_name, target_shape):
     return anchor_images, positive_images, negative_images
 
 def get_tf_dataset(positive_images, negative_images, anchor_images):
+    '''
+    
+
+    Parameters
+    ----------
+    positive_images : TYPE
+        DESCRIPTION.
+    negative_images : TYPE
+        DESCRIPTION.
+    anchor_images : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    dataset : TYPE
+        DESCRIPTION.
+
+    '''
     logger.info('N pos {}',len(positive_images))
     logger.info('N neg = {}', len(negative_images))
     logger.info('N anchor = {}', len(anchor_images))

@@ -7,20 +7,53 @@ Created on Sat Mar  5 16:22:10 2022
 
 import networkx as nx
 from networkx.algorithms.community import greedy_modularity_communities
-#from networkx.algorithms.community import  naive_greedy_modularity_communities
-#from networkx.algorithms.community import louvain_communities
+#from networkx.algorithms.community import  naive_greedy_modularity_communities, louvain_communities, asyn_fluidc
 #from networkx.algorithms import community
 from networkx.algorithms.community import k_clique_communities, asyn_lpa_communities, label_propagation_communities
-# from networkx.algorithms.community import asyn_fluidc
 from util.input_functions import get_config, read_clusters
 from util.evaluation_functions import evaluate_SLICEM, evaluate_clusters
 
-#import numpy as np
 import pandas as pd
 import os
 
 
 def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_results_dir='../results'):
+    '''
+    
+
+    Parameters
+    ----------
+    graph : TYPE
+        DESCRIPTION.
+    dataset_type : TYPE
+        DESCRIPTION.
+    graph_name : TYPE
+        DESCRIPTION.
+    graph_type : TYPE, optional
+        DESCRIPTION. The default is 'undirected'.
+    main_results_dir : TYPE, optional
+        DESCRIPTION. The default is '../results'.
+
+    Returns
+    -------
+    results_df : TYPE
+        DESCRIPTION.
+    out_dir_orig : TYPE
+        DESCRIPTION.
+    gt_lines : TYPE
+        DESCRIPTION.
+    gt_names : TYPE
+        DESCRIPTION.
+    n_true_clus : TYPE
+        DESCRIPTION.
+    dataset : TYPE
+        DESCRIPTION.
+    sep : TYPE
+        DESCRIPTION.
+    index_start : TYPE
+        DESCRIPTION.
+
+    '''
     print(graph_type)
     if not nx.is_directed(graph):
         clustering_methods = ['kclique','async','label_prop','greedy_modularity']
@@ -77,9 +110,7 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
         if len(results_df) == 0:
             results_df = pd.DataFrame(columns = eval_metrics_dict.keys())
         results_df = results_df.append(pd.Series(eval_metrics_dict,name = graph_name + ' ' + clustering_method+'_'+ graph_type))
-    # print(n_true_clus)
-    # print(gt_names)
-    # print(gt_lines)
+
 
     # if ('MMR F1 score' in eval_metrics_dict):
     #     results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True)        
@@ -92,48 +123,18 @@ from argparse import ArgumentParser as argparse_ArgumentParser
 
 parser = argparse_ArgumentParser("Input parameters")
 parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
-parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2_5_neigs_paper"], help="Name of slicem graph")
+parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2_5_neigs_paper"], help="List of slicem graphs - 'siamese_l2_5_edge_list','siamese_cosine_5_edge_list','slicem_edge_list_cosine', 'all_neigs_graph','slicem_edge_list','slicem_edge_list_l1','slicem_edge_list_euclidean','slicem_edge_list_l2' ")
 
 args = parser.parse_args()
-        
-#dataset_type = 'synthetic'
-#dataset_type = 'real'
-#dataset_type = 'synthetic_noisy'
+
 dataset_type = args.dataset_type
 
-
-# graph_name = 'all_neigs_graph'
-# graph_name = 'slicem_edge_list'
-# graph_name = 'slicem_edge_list_l1'
-#graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
-#graph_names = ['siamese_l2_5_edge_list','siamese_cosine_5_edge_list','slicem_edge_list_cosine']
-#graph_names = ['slicem_edge_list_l2']
 graph_names = args.graph_name_opts
 
 #walktrap_cluster_files =['siamese_l2_5_walktrap_clusters.txt','siamese_cosine_5_walktrap_clusters.txt','slicem_cosine_5_walktrap_clusters.txt']
-#walktrap_cluster_files =['slicem_clustering.txt']
-# walktrap_cluster_files =['slicem_clusters_top3k_l1.txt','slicem_clusters_top3k_l2.txt']
 
 walktrap_cluster_files = ['perfect_clustering.txt','slicem_clusters_top3k_l1.txt','slicem_clusters_top3k_l2.txt','slicem_clustering.txt','slicem_clusters_walktrap_5_l1.txt','slicem_clusters_walktrap_5_euclidean.txt']
 
-# if dataset_type == 'real':
-#     dataset = 'real_dataset/slicem_scores_mixture_Euclidean.txt'
-# else: # synthetic
-#     dataset = 'synthetic_dataset/slicem_scores.txt'
-
-# fname = '../data/' + dataset
-
-# with open(fname) as f:
-#     raw_file = [line.rstrip().split() for line in f.readlines()]
-    
-#     graph_lines = [(line_words[0], line_words[2], line_words[4]) for line_words in raw_file][1:]
-  
-# graph_str = '\n'.join([' '.join(tup) for tup in graph_lines])
-
-# with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','wb') as f:
-#     f.write(graph_str.encode('UTF-8'))
-
-    
 results_df_list = []
 for graph_name in graph_names:
     graph_type = 'directed'
@@ -180,61 +181,3 @@ results_df.sort_values(by='FMM F1 score w/o junk',ascending=False,inplace=True)
 main_results_dir='../results'
 results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/graph_clustering_all_methods_sorted_' + dataset_type + '.csv')
 
-
-# # Constructing graph with 5 nearest neighbors with edge weights as z scores relative to all scores for a given 2D class average
-# k=5
-# graph_name = 'top5_graph'
-# new_graph = nx.Graph()
-# # Normalized  
-# for node in graph.nodes:
-#     neighs = graph[node]
-#     '''
-#     AtlasView({'1': {'weight': 90.80096628679762}, '2': {'weight': 88.99723972983995}, '
-#     '''    
-#     neig_weight_tuples = list(zip(neighs.keys(),neighs.values()))
-    
-#     top_neigs = sorted(neig_weight_tuples,key = lambda x: x[1]['weight'],reverse=True)[:k] # Take top neighbors after getting the scores instead in SLICEM
-#     scores = [neig_tup[1]['weight'] for neig_tup in top_neigs]
-        
-#     mean_score = np.mean(scores)
-#     std_dev_score = np.std(scores)
-    
-#     for neig_tup in top_neigs:
-#         neig = neig_tup[0]
-#         wt = (neig_tup[1]['weight'] - mean_score)/float(std_dev_score)
-
-#         new_graph.add_edge(node, neig, weight=wt)
-        
-# with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','wb') as f:    
-#     nx.write_weighted_edgelist(new_graph,f)
-    
-# run_clustering(new_graph,dataset_type,graph_name)    
-
-# # Unnormalized
-# graph_name = 'top5_graph_unnorm'
-# new_graph = nx.Graph()
-
-# for node in graph.nodes:
-#     neighs = graph[node]
-#     '''
-#     AtlasView({'1': {'weight': 90.80096628679762}, '2': {'weight': 88.99723972983995}, '
-#     '''    
-#     neig_weight_tuples = list(zip(neighs.keys(),neighs.values()))
-    
-#     top_neigs = sorted(neig_weight_tuples,key = lambda x: x[1]['weight'],reverse=True)[:k]
-#     # scores = [neig_tup[1]['weight'] for neig_tup in top_neigs]
-        
-#     # mean_score = np.mean(scores)
-#     # std_dev_score = np.std(scores)
-    
-#     for neig_tup in top_neigs:
-#         neig = neig_tup[0]
-#         #wt = (neig_tup[1]['weight'] - mean_score)/float(std_dev_score)
-
-#         wt = neig_tup[1]['weight'] 
-#         new_graph.add_edge(node, neig, weight=wt)
-        
-# with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','wb') as f:    
-#     nx.write_weighted_edgelist(new_graph,f)
-    
-# run_clustering(new_graph,dataset_type,graph_name)

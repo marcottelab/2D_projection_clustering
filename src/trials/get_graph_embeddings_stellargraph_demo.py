@@ -4,15 +4,13 @@ Created on Wed Mar  9 09:29:43 2022
 
 @author: Meghana
 """
-import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
-import os
-import networkx as nx
-import numpy as np
-import pandas as pd
 from stellargraph import datasets
 from IPython.display import display, HTML
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 dataset = datasets.Cora()
 display(HTML(dataset.description))

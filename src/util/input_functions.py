@@ -4,9 +4,10 @@ Created on Sun May 29 17:35:03 2022
 
 @author: Meghana
 """
+from loguru import logger
+
 import mrcfile
 import numpy as np
-from loguru import logger
 
 
 def get_config(dataset='real'):

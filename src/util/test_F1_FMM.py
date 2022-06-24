@@ -5,11 +5,9 @@ Created on Thu Feb 11 17:24:13 2021
 @author: Meghana
 """
 from numpy import random as rnd
+
 import numpy as np
-
 import networkx as nx
-# requires networkx 2.5 (2.3 does'nt support)
-
 
 
 def f1_fmm(wt_mat):

@@ -4,9 +4,11 @@ Created on Thu May 19 15:16:28 2022
 
 @author: Meghana
 """
-import pandas as pd
 from util.input_functions import get_config, read_clusters
 from util.evaluation_functions import evaluate_SLICEM
+
+import pandas as pd
+
 
 dataset = 'real'
 images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset)

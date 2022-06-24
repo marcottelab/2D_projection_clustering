@@ -4,10 +4,10 @@ Created on Sun May 29 17:41:16 2022
 
 @author: Meghana
 """
-        
-import os
 from util.eval_complex import compute_metrics, remove_unknown_prots
 from util.input_functions import read_clusters
+
+import os
 
 
 def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_method,out_dir,n_true_clus,gt_names,main_results_dir='../results',suffix='',plot_hist_flag=1,with_junk=1):
@@ -69,7 +69,6 @@ def evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_m
     return eval_metrics_dict
 
 
-
 def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clustering.txt'):
     '''
     Evaluate SLICEM clustering on synthetic dataset
@@ -108,5 +107,4 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
     eval_metrics_dict = evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,'SLICEM',out_dir,n_true_clus,gt_names,main_results_dir)
     eval_metrics_dict['Silhouette score'] = 'NA'
 
-    
     return eval_metrics_dict

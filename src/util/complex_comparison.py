@@ -1,20 +1,15 @@
-    
+from scipy.stats import hmean
+ 
 import numpy as np
 import numpy.random as rand
 import pandas as pd
-import pickle as p
 import argparse
 import itertools as it
 import random
 import bisect
-#import scipy.misc as misc
 import scipy.special as misc
-from scipy.stats import hmean
-
-
 import matplotlib as mpl
 mpl.use('Agg')
-#import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 
 

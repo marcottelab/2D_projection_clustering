@@ -4,57 +4,52 @@ Created on Wed Mar  9 09:29:43 2022
 
 @author: Meghana
 """
-
-
-import os
-import networkx as nx
-import numpy as np
-import pandas as pd
+from argparse import ArgumentParser as argparse_ArgumentParser
 from stellargraph import StellarGraph
 from stellargraph.data import BiasedRandomWalk, UniformRandomMetaPathWalk
 from gensim.models import Word2Vec
 from pickle import dump as pkl_dump
-
 from stellargraph.mapper import (
 CorruptedGenerator,
 FullBatchNodeGenerator,
-GraphSAGENodeGenerator,
-HinSAGENodeGenerator,
 ClusterNodeGenerator,)
-from stellargraph import StellarGraph
-from stellargraph.layer import GCN, DeepGraphInfomax, GraphSAGE, GAT, APPNP, HinSAGE
-
-from stellargraph import datasets
-from stellargraph.utils import plot_history
-
-import pandas as pd
-from matplotlib import pyplot as plt
-from sklearn import model_selection
-from sklearn.linear_model import LogisticRegression
-from sklearn.manifold import TSNE
-
+from stellargraph.layer import GCN, DeepGraphInfomax, GAT, APPNP
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
-import tensorflow as tf
 from tensorflow.keras import Model
-    
+
+import networkx as nx
+import numpy as np
+import pandas as pd
+import tensorflow as tf    
+
 
 def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type):
+    '''
+    
+
+    Parameters
+    ----------
+    G : TYPE
+        DESCRIPTION.
+    combined : TYPE
+        DESCRIPTION.
+    embedding_to_combine : TYPE
+        DESCRIPTION.
+    dataset_type : TYPE
+        DESCRIPTION.
+    graph_name : TYPE
+        DESCRIPTION.
+    graph_type : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
     print(G.info())
     
-    #node_embedding_method = 'node2vec'
-    #node_embedding_method = 'metapath2vec'
-    #node_embedding_method = 'wys'
-    #node_embedding_method = 'graphWave'
-    
-    # All the below ones need node features as attributes. Get image embeddings and use them as features
-    # node_embedding_method = 'graphSage'
-    # node_embedding_method = 'attri2vec'
-    # node_embedding_method = 'gcn'
-    node_embedding_method = 'graphSage_dgi' # Fix error
-    #node_embedding_method = 'cluster_gcn'
-    #node_embedding_method = 'gat'
-    #node_embedding_method = 'APPNP'
     
     if combined:
         node_embedding_methods = ['graphSage','attri2vec','gcn','cluster_gcn','gat','APPNP']
@@ -119,13 +114,12 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
                 model.wv.vectors
             )  # numpy.ndarray of size number of nodes times embeddings dimensionality
         elif node_embedding_method == 'wys': # Watch your step
-            from stellargraph.core import StellarGraph
             from stellargraph.mapper import AdjacencyPowerGenerator
             from stellargraph.layer import WatchYourStep
             from stellargraph.losses import graph_log_likelihood
-            from tensorflow.keras import optimizers, Model, layers, regularizers
+            from tensorflow.keras import Model, regularizers
             import tensorflow as tf
-            from sklearn import preprocessing, feature_extraction, model_selection
+
             tf.random.set_seed(1234)
             generator = AdjacencyPowerGenerator(G, num_powers=10)
             wys = WatchYourStep(
@@ -145,10 +139,7 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
             node_ids = list(G.nodes())
         elif node_embedding_method == 'graphWave': # Graph wave
             from stellargraph.mapper import GraphWaveGenerator
-            from stellargraph import StellarGraph
-            from scipy.sparse.linalg import eigs
             import tensorflow as tf
-            from tensorflow.keras import backend as K
             sample_points = np.linspace(0, 100, 50).astype(np.float32)
             degree = 20
             scales = [5, 10]
@@ -162,28 +153,14 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
             node_embeddings = np.array([np.squeeze(x.numpy()) for x in embeddings_dataset])
             node_ids = list(G.nodes())
         elif node_embedding_method == 'graphSage': # Unsupervised graphSage
-            import networkx as nx
-            import pandas as pd
+
             import numpy as np
-            import os
-            import random
             
-            import stellargraph as sg
-            from stellargraph.data import EdgeSplitter
             from stellargraph.mapper import GraphSAGELinkGenerator
             from stellargraph.layer import GraphSAGE, link_classification
-            from stellargraph.data import UniformRandomWalk
-            from stellargraph.data import UnsupervisedSampler
-            from sklearn.model_selection import train_test_split
-            
+            from stellargraph.data import UnsupervisedSampler          
             from tensorflow import keras
-            from sklearn import preprocessing, feature_extraction, model_selection
-            from sklearn.linear_model import LogisticRegressionCV, LogisticRegression
-            from sklearn.metrics import accuracy_score
-            
-            from stellargraph import globalvar
-            
-            from stellargraph import datasets
+
             
             nodes = list(G.nodes())
             number_of_walks = 1
@@ -222,43 +199,26 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
                 shuffle=True,
             )
             
-            from sklearn.decomposition import PCA
-            from sklearn.manifold import TSNE
             from stellargraph.mapper import GraphSAGENodeGenerator
-            import pandas as pd
             
             x_inp_src = x_inp[0::2]
             x_out_src = x_out[0]
             embedding_model = keras.Model(inputs=x_inp_src, outputs=x_out_src)
-            node_ids = list(G.nodes()) # CHECKKKKKKKKKKKKKKK
+            node_ids = list(G.nodes()) # CHECK
             node_gen = GraphSAGENodeGenerator(G, batch_size, num_samples).flow(node_ids)
             
             node_embeddings = embedding_model.predict(node_gen, workers=4, verbose=1)
         elif node_embedding_method == 'attri2vec': # Consider giving image embeddings as input and combining directly 
-            import networkx as nx
-            import pandas as pd
+
             import numpy as np
-            import os
-            import random
-            
-            import stellargraph as sg
+
             from stellargraph.data import UnsupervisedSampler
             from stellargraph.mapper import Attri2VecLinkGenerator, Attri2VecNodeGenerator
             from stellargraph.layer import Attri2Vec, link_classification
             
             from tensorflow import keras
             
-            from pandas.core.indexes.base import Index
-            
-            import matplotlib.pyplot as plt
-            from sklearn.manifold import TSNE
-            from sklearn.decomposition import PCA
-            
-            from sklearn.model_selection import train_test_split
-            from sklearn.linear_model import LogisticRegressionCV
-            from sklearn.metrics import accuracy_score
-            
-            from stellargraph import datasets
+
             nodes = list(G.nodes())
             number_of_walks = 4
             length = 5
@@ -328,6 +288,7 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
             epochs = 100
             es = EarlyStopping(monitor="loss", min_delta=0, patience=20)
             history = model.fit(gen, epochs=epochs, verbose=0, callbacks=[es])
+            print(history)
             
             x_emb_in, x_emb_out = gcn_model.in_out_tensors()
             # for full batch models, squeeze out the batch dim (which is 1)
@@ -372,7 +333,6 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
                 graphsage_model, graphsage_generator, epochs=epochs)
     
         # Write node embeddings to file
-        import numpy as np
         with open('../data/' + dataset_type + '_dataset/graph_embeddings/' + graph_name + graph_type + '_stellar_' + node_embedding_method + embedding_to_combine + '.npy', 'wb') as f:
             np.save(f, node_embeddings)
             
@@ -382,6 +342,34 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
 def run_deep_graph_infomax(es, fullbatch_generator,
     base_model, generator, epochs, reorder=lambda sequence, subjects: subjects
 ):
+    '''
+    
+
+    Parameters
+    ----------
+    es : TYPE
+        DESCRIPTION.
+    fullbatch_generator : TYPE
+        DESCRIPTION.
+    base_model : TYPE
+        DESCRIPTION.
+    generator : TYPE
+        DESCRIPTION.
+    epochs : TYPE
+        DESCRIPTION.
+    reorder : TYPE, optional
+        DESCRIPTION. The default is lambda sequence.
+    subjects : subjects
+        DESCRIPTION.
+
+    Returns
+    -------
+    node_embeddings : TYPE
+        DESCRIPTION.
+    node_ids : TYPE
+        DESCRIPTION.
+
+    '''
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
     infomax = DeepGraphInfomax(base_model, corrupted_generator)
@@ -391,6 +379,7 @@ def run_deep_graph_infomax(es, fullbatch_generator,
     model = Model(inputs=x_in, outputs=x_out)
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer=Adam(lr=1e-3))
     history = model.fit(gen, epochs=epochs, verbose=0, callbacks=[es])
+    print(history)
 
     x_emb_in, x_emb_out = base_model.in_out_tensors()
     # for full batch models, squeeze out the batch dim (which is 1)
@@ -405,10 +394,24 @@ def run_deep_graph_infomax(es, fullbatch_generator,
 
 
 def cluster_reorder(sequence, subjects):
-    # shuffle the subjects into the same order as the sequence yield
+    '''
+    shuffle the subjects into the same order as the sequence yield
+
+    Parameters
+    ----------
+    sequence : TYPE
+        DESCRIPTION.
+    subjects : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    '''
     return subjects[sequence.node_order]
 
-from argparse import ArgumentParser as argparse_ArgumentParser
 
 parser = argparse_ArgumentParser("Input parameters")
 parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
@@ -419,7 +422,6 @@ parser.add_argument("--graph_types", nargs='+', default=["undirected"],help="Typ
 
 args = parser.parse_args()
     
-
 dataset_type = args.dataset_type
 
 combined_opts = args.combined_opts

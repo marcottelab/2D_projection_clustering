@@ -6,16 +6,28 @@ Created on Mon May 30 13:35:43 2022
 """
 from igraph import Graph
 
+
 graph_names = ['slicem_edge_list_l1_5_neigs_paper_disc']
 #graph_names = ['slicem_edge_list_top3k_l1','slicem_edge_list_l2_top3k','slicem_edge_list_euclidean','slicem_edge_list_l1','slicem_edge_list_l1_5_neigs_paper','slicem_edge_list_l2_5_neigs_paper']
 #graph_names = ['slicem_edge_list_l1_5_neigs_paper','slicem_edge_list_l2_5_neigs_paper']
 
-
-
 methods = ['walktrap','edge_betweenness_wt','cc_strong','cc','edge_betweenness']
 
 def get_index_name_map(g):
-    # Get index to name map 
+    '''
+    Get index to name map 
+
+    Parameters
+    ----------
+    g : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    index_name_map : TYPE
+        DESCRIPTION.
+
+    '''
     index_name_map = dict()
     
     for i, node in enumerate(list(g.vs())):

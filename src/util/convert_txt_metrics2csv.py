@@ -6,7 +6,26 @@ Created on Tue Jun  7 16:15:28 2022
 """
 import pandas as pd
 
+
 def get_imp_metric_series(name,meth,dir_nm):
+    '''
+    
+
+    Parameters
+    ----------
+    name : TYPE
+        DESCRIPTION.
+    meth : TYPE
+        DESCRIPTION.
+    dir_nm : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    '''
     
     fname = dir_nm + "\evaluate_"+ name + "\\" + meth +"_metrics.txt"
 

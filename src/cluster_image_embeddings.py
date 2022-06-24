@@ -4,13 +4,10 @@ Created on Wed Oct 20 13:43:45 2021
 
 @author: Meghana
 """
-
-
 import traceback
 import faulthandler
 faulthandler.enable()
 
-import mrcfile
 import numpy as np
 import pandas as pd
 import os
@@ -19,7 +16,7 @@ import random
 import pickle as pkl
 
 from argparse import ArgumentParser as argparse_ArgumentParser
-from sklearn.cluster import DBSCAN,AffinityPropagation,MeanShift,OPTICS,Birch
+from sklearn.cluster import DBSCAN,AffinityPropagation,OPTICS,Birch
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from img2vec_pytorch import Img2Vec
 from PIL import Image
@@ -27,9 +24,8 @@ from sklearn.decomposition import PCA, TruncatedSVD
 from loguru import logger
 from sklearn import manifold
 from yaml import dump as yaml_dump
-from util.input_functions import get_config, read_clusters, read_data
+from util.input_functions import get_config, read_data
 from util.evaluation_functions import evaluate_SLICEM, evaluate_clusters
-
 from siamese_embedding import siamese_embedding
 from read_node_embeddings import slicem_graph_embeddings
 
@@ -456,6 +452,20 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 
     
     
 def make_generator(parameters):
+    '''
+    
+
+    Parameters
+    ----------
+    parameters : TYPE
+        DESCRIPTION.
+
+    Yields
+    ------
+    TYPE
+        DESCRIPTION.
+
+    '''
     if not parameters:
         yield dict()
     else:

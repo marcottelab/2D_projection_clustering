@@ -4,9 +4,10 @@ Created on Thu Jun 23 19:27:11 2022
 
 @author: Meghana
 """
-
 from glob import glob
+
 import pandas as pd
+
 
 datasets = ['real_all','synthetic_more_projs_all','synthetic_all','synthetic_noisy_all','synthetic_more_projs_noisy_all','synthetic_more_projs_wo_4v6c_all']
 
@@ -18,13 +19,13 @@ for dataset in datasets:
         level = 2
         
     if level == 1:
-        allsubd = ['../results/'+dataset+'/*/*.csv']# gets all nested subdirectories
+        allsubd = ['../../results/'+dataset+'/*/*.csv']# gets all nested subdirectories
     elif level == 2:
-        allsubd1 = '../results/'+dataset+'/*/*.csv' # gets all nested subdirectories
-        allsubd2 = '../results/'+dataset+'/*/*/*.csv' # gets all nested subdirectories
+        allsubd1 = '../../results/'+dataset+'/*/*.csv' # gets all nested subdirectories
+        allsubd2 = '../../results/'+dataset+'/*/*/*.csv' # gets all nested subdirectories
         allsubd = [allsubd1,allsubd2]
     else:
-        allsubd = ['../results/'+dataset+'/*/*/*.csv']
+        allsubd = ['../../results/'+dataset+'/*/*/*.csv']
     
     fnames = []
     
@@ -45,5 +46,5 @@ for dataset in datasets:
     
     df_compiled = df_compiled.sort_values(by='FMM F1 score',ascending=False)
     
-    df_compiled.to_csv('../results/' + dataset + '/'+dataset+'_all_results_compiled.csv')
+    df_compiled.to_csv('../../results/' + dataset + '/'+dataset+'_all_results_compiled.csv')
         

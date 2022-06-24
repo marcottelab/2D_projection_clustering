@@ -4,10 +4,9 @@ Created on Mon Dec 13 16:13:11 2021
 
 @author: Meghana
 """
-
 from tensorflow.keras.applications import resnet
 from loguru import logger
-import numpy as np
+
 import tensorflow as tf
 
 

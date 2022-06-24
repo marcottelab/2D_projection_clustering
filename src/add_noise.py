@@ -4,12 +4,13 @@ Created on Sun May 15 23:05:20 2022
 
 @author: Meghana
 """
-
 from util.input_functions import get_config, read_data
+from matplotlib import pyplot as plt
 
 import skimage
-from matplotlib import pyplot as plt
 import numpy as np
+import mrcfile
+
 
 #dataset = 'synthetic'
 dataset = 'synthetic_more_projs'
@@ -55,6 +56,5 @@ plt.imsave('../data/'+dataset+'_noisy_dataset/img2_noisy.png',data_noisy_nonneg[
 
 data_noisy_arr = np.array(data_noisy_nonneg, dtype='<f4')
 
-import mrcfile
 with mrcfile.new('../data/'+dataset+'_noisy_dataset/synthetic_noisy.mrcs',overwrite=True) as mrc:
       mrc.set_data(data_noisy_arr)

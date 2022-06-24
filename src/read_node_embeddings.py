@@ -4,9 +4,10 @@ Created on Wed Mar  9 10:24:48 2022
 
 @author: Meghana
 """
+from pickle import load as pkl_load
 
 import numpy as np
-from pickle import load as pkl_load
+
 
 def slicem_graph_embeddings(dataset, node_embedding_method='metapath2vec', implementation = 'stellar',graph = 'slicem_edge_list',embedding_to_combine='siamese',graph_type=''):
     '''
