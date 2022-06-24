@@ -1,0 +1,6 @@
+scikit-learn
+mrcfile
+numpy
+pandas
+pytorch
+img2vec_pytorch

@@ -1,0 +1,12 @@
+sklearn
+mrcfile
+numpy
+pandas
+pytorch
+img2vec_pytorch
+loguru
+seaborn
+matplotlib
+pyyaml
+networkx
+tensorflow

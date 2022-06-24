@@ -432,6 +432,7 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 
     plt.figure(figsize=(15, 8))
     plt.scatter(Y[:, 0], Y[:, 1], c = image_wise_true_labels, cmap='viridis')
     plt.axis("tight")
+    plt.legend()    
     plt.savefig(main_results_dir + '/' + out_dir_emb + '/embedding_tsne.jpg')
     
 
@@ -607,8 +608,8 @@ def main():
     parser.add_argument("--out_dir_suffixes", nargs='+', default=[''], help="Suffix of output directory:'_combined_externally','_combined_internally' ")
     parser.add_argument("--node_attribute_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings, ex: 'resnet-18', 'densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'")
     parser.add_argument("--graph_embedding_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings")
-    parser.add_argument("--embedding_methods", nargs='+', default=['siamese_more_projs_wo_4v6c'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'")
-    parser.add_argument("--eval_SLICEM", default=1, help="Evaluate SLICEM results")
+    parser.add_argument("--embedding_methods", nargs='+', default=['efficientnet_b1'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'")
+    parser.add_argument("--eval_SLICEM", default=0, help="Evaluate SLICEM results")
     parser.add_argument("--main_results_dir", default="../results", help="Main directory containing results")
     args = parser.parse_args()
 
