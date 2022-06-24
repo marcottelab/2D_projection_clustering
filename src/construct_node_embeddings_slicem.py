@@ -412,37 +412,28 @@ from argparse import ArgumentParser as argparse_ArgumentParser
 
 parser = argparse_ArgumentParser("Input parameters")
 parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
-parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True, False], help="Flag to combine image embeddings with graph, opts: True, False or both")
-parser.add_argument("--embeddings_to_combine", nargs='+', default=['siamese','siamese_real','siamese_real_synthetic','siamese_more_negs','siamese_more_projs_wo_4v6c','siamese_noisy','siamese_more_projs_noisy','densenet','vgg','alexnet','efficientnet_b1','efficientnet_b7','resnet-18'], help="Image embeddings, specify list")
-parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_top3k_l1"], help="Name of slicem graph")
-parser.add_argument("--graph_types", nargs='+', default=["directed","undirected"],help="Type of graph - directed, undirected or both")
+parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True, False], help="Flag to combine image embeddings with graph, opts: True, False or both, i.e., can set default = [True False] or specify True False in command line")
+parser.add_argument("--embeddings_to_combine", nargs='+', default=['siamese','siamese_real','siamese_real_synthetic','siamese_more_negs','siamese_more_projs_wo_4v6c','siamese_noisy','siamese_more_projs_noisy','densenet','vgg','alexnet','efficientnet_b1','efficientnet_b7','resnet-18'], help="Image embeddings, specify list, ex: specify options in this list with spaces ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']")
+parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_top3k_l1"], help="Name of slicem graph, ex: ['all_neigs_graph','top5_graph','top5_graph_unnorm','slicem_edge_list_cosine','slicem_edge_list_l2','slicem_edge_list','slicem_edge_list_euclidean','slicem_edge_list_l1']")
+parser.add_argument("--graph_types", nargs='+', default=["directed","undirected"],help="Type of graph - directed, undirected or both, if running script in ide, specify default = ['directed','undirected']")
 
 args = parser.parse_args()
     
 
 dataset_type = args.dataset_type
 
-#combined_opts = [True,False]
 combined_opts = args.combined_opts
 
-#embeddings_to_combine = ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
 embeddings_to_combine = args.embeddings_to_combine
 
-#graph_name_opts = ['all_neigs_graph','top5_graph','top5_graph_unnorm']
-#graph_name_opts = ['slicem_edge_list']
-#graph_name_opts = ['slicem_edge_list_l1']
-#graph_name_opts = ['slicem_edge_list_euclidean','slicem_edge_list_l1']
-#graph_name_opts = ['slicem_edge_list_cosine']
-#graph_name_opts = ['slicem_edge_list_l2']
 graph_name_opts = args.graph_name_opts
 
-#graph_types = ['directed','undirected']
-#graph_types = ['directed']
+
 graph_types = args.graph_types
 
 for graph_name in graph_name_opts:
     for graph_type in graph_types:
-        with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','rb') as f:    
+        with open('../data/' + dataset_type + '_dataset/graphs/' + graph_name + '.txt','rb') as f:    
             if graph_type == 'directed':
                 g = nx.read_weighted_edgelist(f, create_using=nx.DiGraph())
             else:

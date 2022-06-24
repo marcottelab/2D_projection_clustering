@@ -96,7 +96,7 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
     else: # real 
         out_dir = 'data/real_dataset'     
 
-    SLICEM_labels_file =  '../' + out_dir + '/' + file_name
+    SLICEM_labels_file =  '../' + out_dir + '/clusters/' + file_name
 
     cluster_lines, cluster_numbers =  read_clusters(SLICEM_labels_file,sep)
     n_clus = len(cluster_lines)
@@ -110,5 +110,3 @@ def evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_r
 
     
     return eval_metrics_dict
-
-

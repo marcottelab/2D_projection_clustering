@@ -19,26 +19,13 @@ def makeImages(path, pdbinput,n_projs=30,moleculename=''):
 
     # lowpass filter pdb to resolution 3
     
-    # subprocess.run([r"/mnt/c/EMAN/bin/pdb2mrc", path + pdbinput + '.pdb', path + moleculename + '_' + pdbinput + '.mrc', 'apix=1', 'res=9', 'center'])
-    subprocess.run([r"/home/meghana/relion/build/bin/relion_project", '--i', path + moleculename + '_' + pdbinput + '.mrc', '--o', path + moleculename + '_' + pdbinput + '_proj', '--nr_uniform', str(n_projs)])
+    # subprocess.run([r"/mnt/c/EMAN/bin/pdb2mrc", path + '/pdb/'+ pdbinput + '.pdb', path + '/mrc/'+ moleculename + '_' + pdbinput + '.mrc', 'apix=1', 'res=9', 'center'])
+    subprocess.run([r"/home/meghana/relion/build/bin/relion_project", '--i', path + '/mrc/' + moleculename + '_' + pdbinput + '.mrc', '--o', path + moleculename + '_' + pdbinput + '_proj', '--nr_uniform', str(n_projs)])
     
     
-    #subprocess.run([r"C:\EMAN\bin\pdb2mrc", path + pdbinput + '.pdb', path + moleculename + '_' + pdbinput + '.mrc', 'apix=1', 'res=9', 'center'])
-    #subprocess.run([r"C:\Users\Meghana\AppData\Local\Packages\CanonicalGroupLimited.UbuntuonWindows_79rhkp1fndgsc\LocalState\rootfs\home\meghana\relion\build\bin\relion_project", '--i', path + moleculename + '_' + pdbinput + '.mrc', '--o', path + moleculename + '_' + pdbinput + '_proj', '--nr_uniform', '30'])
-    # #subprocess.run([r"./relion/build/bin/relion_project", '--i', path + moleculename + '_' + pdbinput + '.mrc', '--o', path + moleculename + '_' + pdbinput + '_proj', '--nr_uniform', '30'])
+    #subprocess.run([r"C:\EMAN\bin\pdb2mrc", path + '\pdb\'+ pdbinput + '.pdb', path + '\mrc\'+ moleculename + '_' + pdbinput + '.mrc', 'apix=1', 'res=9', 'center'])
+    #subprocess.run([r"C:\Users\Meghana\AppData\Local\Packages\CanonicalGroupLimited.UbuntuonWindows_79rhkp1fndgsc\LocalState\rootfs\home\meghana\relion\build\bin\relion_project", '--i', path + '\mrc\'+moleculename + '_' + pdbinput + '.mrc', '--o', path + moleculename + '_' + pdbinput + '_proj', '--nr_uniform', '30'])
     
-
-    # delete pdb and mrc files
-    # os.remove(path + pdbinput + '.pdb')
-    # try:
-    #     os.remove(path + moleculename + '_' + pdbinput + '.mrc')
-    # except FileNotFoundError:
-    #     pass
-    
-    # try:
-    #     os.remove(path + moleculename + '_' + pdbinput + '_proj.star')
-    # except FileNotFoundError:
-    #     pass
 
     mrcname = moleculename + '_' + pdbinput + '_proj.mrcs'
     return moleculename, mrcname
