@@ -25,13 +25,13 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
     ----------
     graph : TYPE
         DESCRIPTION.
-    dataset_type : TYPE
+    dataset_type : string
         DESCRIPTION.
-    graph_name : TYPE
+    graph_name : string
         DESCRIPTION.
-    graph_type : TYPE, optional
+    graph_type : string, optional
         DESCRIPTION. The default is 'undirected'.
-    main_results_dir : TYPE, optional
+    main_results_dir : string, optional
         DESCRIPTION. The default is '../results'.
 
     Returns

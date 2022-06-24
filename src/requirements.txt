@@ -8,6 +8,6 @@ loguru
 seaborn
 matplotlib
 pyyaml
-networkx
+networkx >= 2.5
 tensorflow
 stellargraph

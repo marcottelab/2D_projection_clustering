@@ -15,12 +15,18 @@ def slicem_graph_embeddings(dataset, node_embedding_method='metapath2vec', imple
 
     Parameters
     ----------
-    node_embedding_method : TYPE, optional
-        DESCRIPTION. The default is 'node2vec'. Other options are 'metapath2vec'
-    implementation : TYPE, optional
+    dataset : string
+        DESCRIPTION.
+    node_embedding_method : string, optional
+        DESCRIPTION. The default is 'metapath2vec'.
+    implementation : string, optional
         DESCRIPTION. The default is 'stellar'.
-    graph : TYPE, optional
-        DESCRIPTION. The default is 'top5_unnorm'.
+    graph : string, optional
+        DESCRIPTION. The default is 'slicem_edge_list'.
+    embedding_to_combine : string, optional
+        DESCRIPTION. The default is 'siamese'.
+    graph_type : string, optional
+        DESCRIPTION. The default is ''.
 
     Returns
     -------

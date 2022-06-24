@@ -24,7 +24,7 @@ def get_index_name_map(g):
 
     Returns
     -------
-    index_name_map : TYPE
+    index_name_map : dict
         DESCRIPTION.
 
     '''

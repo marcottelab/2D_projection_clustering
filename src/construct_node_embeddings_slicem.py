@@ -38,9 +38,9 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
         DESCRIPTION.
     dataset_type : TYPE
         DESCRIPTION.
-    graph_name : TYPE
+    graph_name : string
         DESCRIPTION.
-    graph_type : TYPE
+    graph_type : string
         DESCRIPTION.
 
     Returns
@@ -339,6 +339,7 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
         with open('../data/' + dataset_type + '_dataset/graph_embeddings/' + graph_name + graph_type + '_stellar_' + node_embedding_method+ embedding_to_combine + '_node_ids.list', 'wb') as f:
             pkl_dump(node_ids,f)    
             
+            
 def run_deep_graph_infomax(es, fullbatch_generator,
     base_model, generator, epochs, reorder=lambda sequence, subjects: subjects
 ):
@@ -487,4 +488,3 @@ for graph_name in graph_name_opts:
                 G = StellarGraph.from_networkx(g)
                 
                 get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type)
-            

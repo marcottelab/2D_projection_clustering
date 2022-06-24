@@ -30,7 +30,7 @@ def get_image_triples(dataset_name, target_shape):
 
     Parameters
     ----------
-    dataset_name : TYPE
+    dataset_name : string
         DESCRIPTION.
     target_shape : TYPE
         DESCRIPTION.
@@ -133,11 +133,9 @@ def get_tf_dataset(positive_images, negative_images, anchor_images):
     dataset = tf.data.Dataset.zip((anchor_dataset, positive_dataset, negative_dataset))
     dataset = dataset.shuffle(buffer_size=1024)
     return dataset
-#dataset_name = 'synthetic_more_projs'
-#dataset_name = 'synthetic'
-#dataset_name = 'synthetic_noisy'
-#dataset_name = 'synthetic_more_projs_noisy'
-#datasets = ['real']
+
+
+# Options: datasets = ['real', 'synthetic_more_projs_noisy','synthetic_more_projs','synthetic','synthetic_noisy']
 datasets = ['real', 'synthetic_more_projs_noisy']
 
 exp_name = '_'.join(datasets)
