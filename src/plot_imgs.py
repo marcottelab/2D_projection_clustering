@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 
 import os
 
+
 datasets = ['synthetic_noisy']
 
 #dataset = 'synthetic'

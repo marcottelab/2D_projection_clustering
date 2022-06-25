@@ -1,12 +1,12 @@
-import os
-import numpy as np
+from tensorflow.keras.applications import resnet
+from loguru import logger
 from tensorflow.keras import metrics
 from cluster_image_embeddings import get_config, read_data
 from PIL import Image
-import tensorflow as tf
-from tensorflow.keras.applications import resnet
 
-from loguru import logger
+import os
+import numpy as np
+import tensorflow as tf
 
 
 dataset = 'synthetic'
@@ -48,8 +48,6 @@ logger.info('Putting together full dataset...')
 
 train_dataset = tf.data.Dataset.zip((anchor_dataset, positive_dataset, negative_dataset))
 #dataset = dataset.shuffle(buffer_size=1024)
-
-
 
 # Batching is needed
 train_dataset = train_dataset.batch(32, drop_remainder=False)
@@ -93,4 +91,3 @@ logger.info("Positive similarity: {}", positive_similarity.numpy())
 
 negative_similarity = cosine_similarity(anchor_embedding, negative_embedding)
 logger.info("Negative similarity {} ", negative_similarity.numpy())
-

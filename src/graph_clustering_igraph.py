@@ -19,13 +19,13 @@ def get_index_name_map(g):
 
     Parameters
     ----------
-    g : TYPE
-        DESCRIPTION.
+    g : igraph graph
+        similarity weighted graph
 
     Returns
     -------
     index_name_map : dict
-        DESCRIPTION.
+        map of graph node indices to graph node names
 
     '''
     index_name_map = dict()

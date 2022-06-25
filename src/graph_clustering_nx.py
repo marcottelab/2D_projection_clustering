@@ -4,15 +4,13 @@ Created on Sat Mar  5 16:22:10 2022
 
 @author: Meghana
 """
-
-import networkx as nx
-from networkx.algorithms.community import greedy_modularity_communities
-#from networkx.algorithms.community import  naive_greedy_modularity_communities, louvain_communities, asyn_fluidc
-#from networkx.algorithms import community
-from networkx.algorithms.community import k_clique_communities, asyn_lpa_communities, label_propagation_communities
 from util.input_functions import get_config, read_clusters
 from util.evaluation_functions import evaluate_SLICEM, evaluate_clusters
+from networkx.algorithms.community import greedy_modularity_communities, k_clique_communities, asyn_lpa_communities, label_propagation_communities
+#from networkx.algorithms.community import  naive_greedy_modularity_communities, louvain_communities, asyn_fluidc
+#from networkx.algorithms import community
 
+import networkx as nx
 import pandas as pd
 import os
 
@@ -23,35 +21,35 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
 
     Parameters
     ----------
-    graph : TYPE
-        DESCRIPTION.
+    graph : networkx graph
+        weighted graph
     dataset_type : string
-        DESCRIPTION.
+        Name of the dataset
     graph_name : string
-        DESCRIPTION.
+        Name of the graph
     graph_type : string, optional
-        DESCRIPTION. The default is 'undirected'.
+        directed or undirected The default is 'undirected'.
     main_results_dir : string, optional
-        DESCRIPTION. The default is '../results'.
+        Name of the main results directory. The default is '../results'.
 
     Returns
     -------
-    results_df : TYPE
-        DESCRIPTION.
-    out_dir_orig : TYPE
-        DESCRIPTION.
-    gt_lines : TYPE
-        DESCRIPTION.
-    gt_names : TYPE
-        DESCRIPTION.
-    n_true_clus : TYPE
-        DESCRIPTION.
-    dataset : TYPE
-        DESCRIPTION.
-    sep : TYPE
-        DESCRIPTION.
-    index_start : TYPE
-        DESCRIPTION.
+    results_df : pandas dataframe
+        evaluation metrics comparing predicted complexes with known complexes
+    out_dir_orig : string
+        Name of the directory with the results
+    gt_lines : list[set(string)]
+        List of sets of image indices in string format per ground truth cluster
+    gt_names : list[string]
+        List of cluster names for each cluster in gt_lines in the same order
+    n_true_clus : int
+        No. of true clusters
+    dataset : string
+        Name of the dataset
+    sep : string
+        Separater between name of cluster and its members
+    index_start : integer
+        Index at which images are started being numbered, ex: 0, 1, etc
 
     '''
     print(graph_type)

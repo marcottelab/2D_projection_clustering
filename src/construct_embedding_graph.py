@@ -1,9 +1,10 @@
+from scipy.stats import wasserstein_distance
+from multiprocessing import cpu_count as mul_cpu_count
+
 import time
 import argparse
 import numpy as np
 import multiprocessing
-from scipy.stats import wasserstein_distance
-from multiprocessing import cpu_count as mul_cpu_count
 
 
 def main():
@@ -83,6 +84,7 @@ def main():
     
     write_scores(final_scores, outpath=args.outpath,metric=args.metric,emb=args.embedding)    
 
+
 def pairwise_l2(a, b, translate):
     return np.linalg.norm(a - b)
 
@@ -102,6 +104,7 @@ def pairwise_correlate(a, b, translate):
 
 def pairwise_wasserstein(a, b, translate):
     return wasserstein_distance(a, b)
+
 
 def wrapper_single_function(pair, pairwise, translate):
     score = pairwise(pair[0][0], pair[1][0], translate) 

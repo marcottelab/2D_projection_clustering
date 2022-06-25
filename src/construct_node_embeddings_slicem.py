@@ -30,18 +30,18 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
 
     Parameters
     ----------
-    G : TYPE
-        DESCRIPTION.
-    combined : TYPE
-        DESCRIPTION.
-    embedding_to_combine : TYPE
-        DESCRIPTION.
-    dataset_type : TYPE
-        DESCRIPTION.
+    G : Stellargraph graph
+        Similarity weighted graph
+    combined : boolean
+        Use image embedding as node attribute or use node embedding methods without image embedding as attributes
+    embedding_to_combine : string
+        Name of the image embedding to use as node attribute for the graph embedding
+    dataset_type : string
+        Name of the dataset
     graph_name : string
-        DESCRIPTION.
+        Name of the graph
     graph_type : string
-        DESCRIPTION.
+        directed or undirected graph
 
     Returns
     -------
@@ -366,9 +366,9 @@ def run_deep_graph_infomax(es, fullbatch_generator,
     Returns
     -------
     node_embeddings : TYPE
-        DESCRIPTION.
-    node_ids : TYPE
-        DESCRIPTION.
+        Node embeddings
+    node_ids : list[str]
+        List of graph nodes
 
     '''
     corrupted_generator = CorruptedGenerator(generator)

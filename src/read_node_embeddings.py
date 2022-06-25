@@ -11,27 +11,27 @@ import numpy as np
 
 def slicem_graph_embeddings(dataset, node_embedding_method='metapath2vec', implementation = 'stellar',graph = 'slicem_edge_list',embedding_to_combine='siamese',graph_type=''):
     '''
-    
+    Get graph embeddings
 
     Parameters
     ----------
     dataset : string
-        DESCRIPTION.
+        Name of the dataset
     node_embedding_method : string, optional
-        DESCRIPTION. The default is 'metapath2vec'.
+        Name of the node embedding method. The default is 'metapath2vec'.
     implementation : string, optional
-        DESCRIPTION. The default is 'stellar'.
+        stellar or original node2vec. The default is 'stellar'.
     graph : string, optional
-        DESCRIPTION. The default is 'slicem_edge_list'.
+        The name of the graph. The default is 'slicem_edge_list'.
     embedding_to_combine : string, optional
-        DESCRIPTION. The default is 'siamese'.
+        Name of the embedding to combine. The default is 'siamese'.
     graph_type : string, optional
-        DESCRIPTION. The default is ''.
+        Type of graph - directed or undirected as mentioned in the file name. The default is ''.
 
     Returns
     -------
-    vectors : TYPE
-        DESCRIPTION.
+    vectors : numpy.ndarray
+        Array of image embeddings.
 
     '''
     

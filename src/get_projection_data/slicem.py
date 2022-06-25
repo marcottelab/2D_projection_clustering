@@ -1,11 +1,13 @@
+from scipy import ndimage as ndi
+from scipy.stats import wasserstein_distance
+from skimage import transform, measure
+
 import time
 import mrcfile
 import argparse
 import numpy as np
 import multiprocessing
-from scipy import ndimage as ndi
-from scipy.stats import wasserstein_distance
-from skimage import transform, measure
+
 
 SHIFT = ['Euclidean', 'L1', 'cosine'] # Metrics requiring real space translation
 

@@ -26,23 +26,23 @@ faulthandler.enable()
 
 def get_image_triples(dataset_name, target_shape):
     '''
-    
+    Get triples of anchor, positive and negative images
 
     Parameters
     ----------
     dataset_name : string
-        DESCRIPTION.
-    target_shape : TYPE
-        DESCRIPTION.
+        Name of the dataset
+    target_shape : tuple
+        Target shape of the array
 
     Returns
     -------
-    anchor_images : TYPE
-        DESCRIPTION.
-    positive_images : TYPE
-        DESCRIPTION.
-    negative_images : TYPE
-        DESCRIPTION.
+    anchor_images : list[numpy.ndarray]
+        list of anchor images
+    positive_images : list[numpy.ndarray]
+        list of positive images (images similar to anchor)
+    negative_images : list[numpy.ndarray]
+        list of negative images (images dissimilar to anchor)
 
     '''
     images_file_name,images_true_labels,sep,index_start,out_dir_orig, sep2 = get_config(dataset_name)
@@ -97,23 +97,24 @@ def get_image_triples(dataset_name, target_shape):
 
     return anchor_images, positive_images, negative_images
 
+
 def get_tf_dataset(positive_images, negative_images, anchor_images):
     '''
-    
+    Convert anchor, positive and negative images to tensorflow dataset
 
     Parameters
     ----------
-    positive_images : TYPE
-        DESCRIPTION.
-    negative_images : TYPE
-        DESCRIPTION.
-    anchor_images : TYPE
-        DESCRIPTION.
+    positive_images : list[numpy.ndarray]
+        list of positive images (images similar to anchor)
+    negative_images : list[numpy.ndarray]
+        list of negative images (images dissimilar to anchor)
+    anchor_images : list[numpy.ndarray]
+        list of anchor images
 
     Returns
     -------
-    dataset : TYPE
-        DESCRIPTION.
+    dataset : tensorflow dataset
+        Dataset combing anchor, positive and negative images
 
     '''
     logger.info('N pos {}',len(positive_images))

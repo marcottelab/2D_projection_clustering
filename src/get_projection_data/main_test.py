@@ -1,14 +1,15 @@
+from slicem import get_projection_2D
+from biopandas.pdb import PandasPdb
+
+import subprocess
 import numpy as np
 import mrcfile
-from slicem import get_projection_2D
-import random
+# import random
 
 
 # takes list of pdbs and converts to projected mrcs
 def makeImages(path, pdbinput,n_projs=30,moleculename=''):
-    from biopandas.pdb import PandasPdb
-    import subprocess
-    import os
+
     #ppdb = PandasPdb().fetch_pdb(pdbinput)
     #COMPNDdf = ppdb.df['OTHERS'].loc[ppdb.df['OTHERS']['record_name']  == 'COMPND']
     #moleculeline = COMPNDdf[COMPNDdf['entry'].str.contains(" MOLECULE:")]['entry'].iloc[0]
@@ -80,7 +81,6 @@ mol_names = ['DNALIGASE',
 # indices = []
 # mrc_name_list = []
 
-# import random
 # i=0
 # for ind,pdb in enumerate(pdb_names):
 #     n_projs = random.randint(20,30)

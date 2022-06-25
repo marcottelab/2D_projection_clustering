@@ -6,24 +6,20 @@ Created on Fri Dec 10 15:59:42 2021
 """
 from cluster_image_embeddings import get_config, read_data
 from itertools import combinations
-import random
-
 from PIL import Image
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import random
-import tensorflow as tf
-from pathlib import Path
-from tensorflow.keras import applications
 from tensorflow.keras import layers
-from tensorflow.keras import losses
 from tensorflow.keras import optimizers
 from tensorflow.keras import metrics
 from tensorflow.keras import Model
 from tensorflow.keras.applications import resnet
 from loguru import logger
+
+import numpy as np
+import os
+import random
+import tensorflow as tf
 import pickle
+
 
 dataset_name = 'synthetic_more_projs'
 #dataset_name = 'synthetic'
@@ -334,7 +330,3 @@ gradients passed to the optimizer to update the model weights at every step. For
 [Intro to Keras for researchers](https://keras.io/getting_started/intro_to_keras_for_researchers/)
 and [Writing a training loop from scratch](https://www.tensorflow.org/guide/keras/writing_a_training_loop_from_scratch?hl=en).
 """
-
-
-    
-

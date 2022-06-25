@@ -453,17 +453,17 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 
     
 def make_generator(parameters):
     '''
-    
+    Generator for parameters
 
     Parameters
     ----------
-    parameters : TYPE
-        DESCRIPTION.
+    parameters : dict(string: list[float])
+        A dictionary of parameters and their range of values
 
     Yields
     ------
-    TYPE
-        DESCRIPTION.
+    dict
+        A dictionary of parameter and its value
 
     '''
     if not parameters:
@@ -500,19 +500,21 @@ def cluster_hyperparameter_optimization(cluster_hyper_param_ranges,data_to_clust
         DESCRIPTION.: List of sets of image indices in string format per ground truth cluster
     gt_names : TYPE(list[string])
         DESCRIPTION.: List of cluster names for each cluster in gt_lines in the same order
-    n_true_clusters : TYPE
-        DESCRIPTION.
-    out_dir_orig : TYPE
-        DESCRIPTION.
-    dataset : TYPE
-        DESCRIPTION.
+    n_true_clusters : TYPE (int)
+        DESCRIPTION. No. of true clusters
+    out_dir_orig : TYPE (str)
+        DESCRIPTION. Name of the output files' directory
+    dataset : TYPE (str)
+        DESCRIPTION. Name of the dataset
     dist_metric : TYPE, optional (string)
         DESCRIPTION. The default is ''.: Pairwise distance metric
 
     Returns
     -------
-    best_method_sklearn: TYPE
-        DESCRIPTION.
+    best_method_sklearn: TYPE (str)
+        DESCRIPTION. Name of the best method details
+    best_method: TYPE (str)
+        DESCRIPTION. Name of the best method    
 
     '''
     results_df = pd.DataFrame()

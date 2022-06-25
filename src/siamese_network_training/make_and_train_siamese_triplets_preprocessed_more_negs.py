@@ -6,23 +6,18 @@ Created on Fri Dec 10 15:59:42 2021
 """
 from cluster_image_embeddings import get_config, read_data
 from itertools import combinations
-import random
-
-from PIL import Image
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import random
-import tensorflow as tf
-from pathlib import Path
-from tensorflow.keras import applications
 from tensorflow.keras import layers
-from tensorflow.keras import losses
 from tensorflow.keras import optimizers
 from tensorflow.keras import metrics
 from tensorflow.keras import Model
 from tensorflow.keras.applications import resnet
 from loguru import logger
+from PIL import Image
+
+import numpy as np
+import os
+import random
+import tensorflow as tf
 import pickle
 
 dataset = 'synthetic'
@@ -81,8 +76,6 @@ positive_images = [converted_data[int(triple[1])] for triple in siamese_triples_
 logger.info('Making negative images list...')
 #negative_images = [data[int(triple[2])] for triple in siamese_triples_with_sampled_negs]
 negative_images = [converted_data[int(triple[2])] for triple in siamese_triples_with_sampled_negs]
-
-
 
 logger.info('Constructing anchor dataset...')
 anchor_dataset = tf.data.Dataset.from_tensor_slices(anchor_images)
@@ -336,7 +329,3 @@ gradients passed to the optimizer to update the model weights at every step. For
 [Intro to Keras for researchers](https://keras.io/getting_started/intro_to_keras_for_researchers/)
 and [Writing a training loop from scratch](https://www.tensorflow.org/guide/keras/writing_a_training_loop_from_scratch?hl=en).
 """
-
-
-    
-
