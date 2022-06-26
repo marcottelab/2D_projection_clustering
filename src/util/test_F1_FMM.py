@@ -11,6 +11,26 @@ import networkx as nx
 
 
 def f1_fmm(wt_mat):
+    '''
+    Get FMM F1 score
+
+    Parameters
+    ----------
+    wt_mat : numpy.ndarray
+        Adjacency matrix of similarities between true and predicted complexes
+
+    Returns
+    -------
+    prec : float
+        FMM precision
+    recall : float
+        FMM recall
+    f1 : float
+        FMM F1 score
+    max_matching_edges : dict
+        true complex to predicted complex and vice-versa matches, ex: {'t2': 'p3', 't1': 'p2', 't0': 'p0', 'p3': 't2'} 
+
+    '''
     wt_mat = - wt_mat
     
     nr, nc = np.shape(wt_mat)
@@ -40,9 +60,13 @@ def f1_fmm(wt_mat):
     
     return prec, recall, f1, max_matching_edges
 
-# test
-#wt_mat = rnd.rand(3,4)
-#prec, recall, f1, max_matching_edges = f1_mmr(wt_mat)
-#print(f1)
-#print(max_matching_edges)
-#print(wt_mat)
+
+def test_f1_fmm():
+    wt_mat = rnd.rand(3,4)
+    prec, recall, f1, max_matching_edges = f1_fmm(wt_mat)
+    print(f1)
+    print(max_matching_edges)
+    print(wt_mat)
+    
+if __name__ == "__main__":
+    test_f1_fmm()

@@ -4,6 +4,7 @@ Created on Sat Mar  5 16:22:10 2022
 
 @author: Meghana
 """
+from argparse import ArgumentParser as argparse_ArgumentParser
 from util.input_functions import get_config, read_clusters
 from util.evaluation_functions import evaluate_SLICEM, evaluate_clusters
 from networkx.algorithms.community import greedy_modularity_communities, k_clique_communities, asyn_lpa_communities, label_propagation_communities
@@ -17,7 +18,8 @@ import os
 
 def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_results_dir='../results'):
     '''
-    
+    Graph clustering with different methods - 'kclique','async','label_prop','greedy_modularity' if undirected and 
+    'async','greedy_modularity' if directed
 
     Parameters
     ----------
@@ -101,8 +103,6 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
         print(sorted(c[0]))
         
         clusterwise_indices_start_str = [(entry,1) for entry in c]
-        
-
 
         eval_metrics_dict = evaluate_clusters(clusterwise_indices_start_str,gt_lines,n_clus,clustering_method,out_dir,n_true_clus,gt_names,main_results_dir,suffix='_'+graph_name + '_' + clustering_method+'_'+ graph_type)
         if len(results_df) == 0:
@@ -117,65 +117,69 @@ def run_clustering(graph,dataset_type,graph_name,graph_type='undirected',main_re
     
     return results_df, out_dir_orig, gt_lines,gt_names,n_true_clus,dataset,sep,index_start
     
-from argparse import ArgumentParser as argparse_ArgumentParser
 
-parser = argparse_ArgumentParser("Input parameters")
-parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
-parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2_5_neigs_paper"], help="List of slicem graphs - 'siamese_l2_5_edge_list','siamese_cosine_5_edge_list','slicem_edge_list_cosine', 'all_neigs_graph','slicem_edge_list','slicem_edge_list_l1','slicem_edge_list_euclidean','slicem_edge_list_l2' ")
-
-args = parser.parse_args()
-
-dataset_type = args.dataset_type
-
-graph_names = args.graph_name_opts
-
-#walktrap_cluster_files =['siamese_l2_5_walktrap_clusters.txt','siamese_cosine_5_walktrap_clusters.txt','slicem_cosine_5_walktrap_clusters.txt']
-
-walktrap_cluster_files = ['perfect_clustering.txt','slicem_clusters_top3k_l1.txt','slicem_clusters_top3k_l2.txt','slicem_clustering.txt','slicem_clusters_walktrap_5_l1.txt','slicem_clusters_walktrap_5_euclidean.txt']
-
-results_df_list = []
-for graph_name in graph_names:
-    graph_type = 'directed'
-
-    with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','rb') as f:    
-        graph = nx.read_weighted_edgelist(f, create_using=nx.DiGraph())
+def main():
+    parser = argparse_ArgumentParser("Input parameters")
+    parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
+    parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_l2_5_neigs_paper"], help="List of slicem graphs - 'siamese_l2_5_edge_list','siamese_cosine_5_edge_list','slicem_edge_list_cosine', 'all_neigs_graph','slicem_edge_list','slicem_edge_list_l1','slicem_edge_list_euclidean','slicem_edge_list_l2' ")
+    parser.add_argument("--walktrap_cluster_files", nargs='+', default=['perfect_clustering.txt','slicem_clusters_top3k_l1.txt','slicem_clusters_top3k_l2.txt','slicem_clustering.txt','slicem_clusters_walktrap_5_l1.txt','slicem_clusters_walktrap_5_euclidean.txt'], help="List of clusters to evaluate, ex: ['siamese_l2_5_walktrap_clusters.txt','siamese_cosine_5_walktrap_clusters.txt','slicem_cosine_5_walktrap_clusters.txt'] ")
+    
+    
+    args = parser.parse_args()
+    
+    dataset_type = args.dataset_type
+    
+    graph_names = args.graph_name_opts
+    
+    
+    walktrap_cluster_files = args.walktrap_cluster_files
+    
+    results_df_list = []
+    for graph_name in graph_names:
+        graph_type = 'directed'
+    
+        with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','rb') as f:    
+            graph = nx.read_weighted_edgelist(f, create_using=nx.DiGraph())
+            
+        # len(graph.edges())
+        # Out[8]: 611
+            
+        df1, out_dir_orig, gt_lines,gt_names,n_true_clus,dataset,sep,index_start = run_clustering(graph,dataset_type,graph_name, graph_type)   
+    
+        graph_type = 'undirected'
+        with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','rb') as f:    
+            graph = nx.read_weighted_edgelist(f)
+            
+        df2, out_dir_orig, gt_lines,gt_names,n_true_clus,dataset,sep,index_start = run_clustering(graph,dataset_type,graph_name, graph_type)   
         
-    # len(graph.edges())
-    # Out[8]: 611
+        results_df_list.append(pd.concat([df1,df2]))
         
-    df1, out_dir_orig, gt_lines,gt_names,n_true_clus,dataset,sep,index_start = run_clustering(graph,dataset_type,graph_name, graph_type)   
-
-    graph_type = 'undirected'
-    with open('../data/' + dataset_type + '_dataset/' + graph_name + '.txt','rb') as f:    
-        graph = nx.read_weighted_edgelist(f)
+    results_df = pd.concat(results_df_list)
         
-    df2, out_dir_orig, gt_lines,gt_names,n_true_clus,dataset,sep,index_start = run_clustering(graph,dataset_type,graph_name, graph_type)   
+    eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start)
+    results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
     
-    results_df_list.append(pd.concat([df1,df2]))
+    # eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clusters_walktrap_5_euclidean.txt')
+    # results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM Euclidean reproduced'))    
     
-results_df = pd.concat(results_df_list)
+    # eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clusters_walktrap_5_w_outliers_l1 - Copy.txt')
+    # results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM L1 reproduced'))    
     
-eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start)
-results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
-
-# eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clusters_walktrap_5_euclidean.txt')
-# results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM Euclidean reproduced'))    
-
-# eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = 'slicem_clusters_walktrap_5_w_outliers_l1 - Copy.txt')
-# results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM L1 reproduced'))    
-
-for fname in walktrap_cluster_files:
-    if fname == 'perfect_clustering.txt':
-        index_start = 0
-    else:
-        index_start = 1    
-    eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = fname)
+    for fname in walktrap_cluster_files:
+        if fname == 'perfect_clustering.txt':
+            index_start = 0
+        else:
+            index_start = 1    
+        eval_metrics_dict_SLICEM = evaluate_SLICEM(gt_lines,gt_names,n_true_clus,dataset,sep,index_start,main_results_dir='..',file_name = fname)
+        
+        results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = fname))    
+     
+    #results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True) 
+    results_df.sort_values(by='FMM F1 score w/o junk',ascending=False,inplace=True)     
     
-    results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = fname))    
- 
-#results_df.sort_values(by='MMR F1 score',ascending=False,inplace=True) 
-results_df.sort_values(by='FMM F1 score w/o junk',ascending=False,inplace=True)     
+    main_results_dir='../results'
+    results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/graph_clustering_all_methods_sorted_' + dataset_type + '.csv')
 
-main_results_dir='../results'
-results_df.to_csv(main_results_dir + '/' + out_dir_orig + '/graph_clustering_all_methods_sorted_' + dataset_type + '.csv')
 
+if __name__ == "__main__":
+    main()

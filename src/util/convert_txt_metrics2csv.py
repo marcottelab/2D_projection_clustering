@@ -4,26 +4,28 @@ Created on Tue Jun  7 16:15:28 2022
 
 @author: Meghana
 """
+from argparse import ArgumentParser as argparse_ArgumentParser
+
 import pandas as pd
 
 
 def get_imp_metric_series(name,meth,dir_nm):
     '''
-    
+    Compile important metrics into series from metrics txt file    
 
     Parameters
     ----------
-    name : TYPE
-        DESCRIPTION.
-    meth : TYPE
-        DESCRIPTION.
-    dir_nm : TYPE
-        DESCRIPTION.
+    name : str
+        graph name +'_'+ clustering method
+    meth : str
+        graph clustering method
+    dir_nm : str
+        name of results directory
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    fin_dict_series: pd.Series
+        important metrics and their values 
 
     '''
     
@@ -44,18 +46,29 @@ def get_imp_metric_series(name,meth,dir_nm):
     imp_metrics = ['No. of matches in MMR','MMR Precision','MMR Recall','MMR F1 score','Net F1 score','Qi Precision','Qi Recall','Qi F1 score','No. of clusters']
     fin_dict = {key: pair_dict[key] for key in imp_metrics}
     
-    return pd.Series(fin_dict,name = name)    
-
-dir_nm = "..\..\\results\synthetic_all\synthetic_graph_clustering"
-graph_names = ['top5_graph','top5_graph_unnorm','all_neigs_graph']
-meths = ['async','greedy_modularity','kclique','label_prop']
-names = [(graph+'_'+meth,meth) for graph in graph_names for meth in meths]
-
-results_df = pd.DataFrame()
-for name_meth in names:
-    series = get_imp_metric_series(name_meth[0],name_meth[1],dir_nm)
-    results_df = results_df.append(series)
+    fin_dict_series = pd.Series(fin_dict,name = name)
     
-results_df.to_csv(dir_nm+'\\results.csv')
-    
+    return fin_dict_series
 
+def main():
+    parser = argparse_ArgumentParser("Input parameters")
+    parser.add_argument("--graph_names", nargs='+', default=['top5_graph','top5_graph_unnorm','all_neigs_graph'], help="Name of slicem graph, specify as list")
+    parser.add_argument("--meths", nargs='+', default=['async','greedy_modularity','kclique','label_prop'],help="List of graph clustering methods")    
+    parser.add_argument("--dir_nm", default="..\..\\results\synthetic_all\synthetic_graph_clustering", help="Directory containing results")
+    args = parser.parse_args()
+    
+    dir_nm = args.dir_nm
+    graph_names = args.graph_names
+    meths = args.meths
+    
+    names = [(graph+'_'+meth,meth) for graph in graph_names for meth in meths]
+    
+    results_df = pd.DataFrame()
+    for name_meth in names:
+        series = get_imp_metric_series(name_meth[0],name_meth[1],dir_nm)
+        results_df = results_df.append(series)
+        
+    results_df.to_csv(dir_nm+'\\results.csv')
+
+if __name__ == "__main__":
+    main()

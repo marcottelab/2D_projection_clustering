@@ -15,22 +15,22 @@ from util.test_F1_FMM import f1_fmm
 
 def write_best_matches(best_matches_for_known,out_comp_nm,dir_nm,suffix,write_comp_score=0,gt_names=[]):
     '''
+    Write best matches for known complexes using CMMF
     
-
     Parameters
     ----------
-    best_matches_for_known : TYPE
-        DESCRIPTION.
-    out_comp_nm : TYPE
-        DESCRIPTION.
-    dir_nm : TYPE
-        DESCRIPTION.
-    suffix : TYPE
-        DESCRIPTION.
-    write_comp_score : TYPE, optional
-        DESCRIPTION. The default is 0.
-    gt_names : TYPE, optional
-        DESCRIPTION. The default is [].
+    best_matches_for_known : list[tuple(set(str),set(str),float,float]
+        Predicted complex nodes, known complex nodes, metric score, complex score
+    out_comp_nm : str
+        Output directory name
+    dir_nm : str
+        Directory name correspondig to experiment, ex: hu.MAP
+    suffix : str
+        suffix for results: train, test or both 
+    write_comp_score : bool, optional
+        Write complex score or not The default is 0.
+    gt_names : list[string], optional
+        List of cluster names for each cluster in gt_lines in the same orders. The default is [].
 
     Returns
     -------
@@ -91,20 +91,20 @@ def write_best_matches(best_matches_for_known,out_comp_nm,dir_nm,suffix,write_co
 
 def write_best_matches_best4pred(best_matches_for_known,out_comp_nm,dir_nm,suffix,write_comp_score=0):
     '''
-    
+    Write best matches for predicted complexes using CMMF
 
     Parameters
     ----------
-    best_matches_for_known : TYPE
-        DESCRIPTION.
-    out_comp_nm : TYPE
-        DESCRIPTION.
-    dir_nm : TYPE
-        DESCRIPTION.
-    suffix : TYPE
-        DESCRIPTION.
-    write_comp_score : TYPE, optional
-        DESCRIPTION. The default is 0.
+    best_matches_for_known : list[tuple(set(str),set(str),float,float]
+        Predicted complex nodes, known complex nodes, metric score, complex score
+    out_comp_nm : str
+        Output directory name
+    dir_nm : str
+        Directory name corresponding to experiment, ex: hu.MAP
+    suffix : str
+        suffix for results: train, test or both 
+    write_comp_score : bool, optional
+        Write complex score or not The default is 0.
 
     Returns
     -------
@@ -167,21 +167,21 @@ def plot_f1_scores(best_matches,out_comp_nm,suffix,prefix,plot_hist_flag=1):
 
     Parameters
     ----------
-    best_matches : TYPE
-        DESCRIPTION.
-    out_comp_nm : TYPE
-        DESCRIPTION.
-    suffix : TYPE
-        DESCRIPTION.
-    prefix : TYPE
-        DESCRIPTION.
-    plot_hist_flag : TYPE, optional
-        DESCRIPTION. The default is 1.
+    best_matches : list[tuple(set(str),set(str),float,float]
+        Predicted complex nodes, known complex nodes, metric score, complex score
+    out_comp_nm : str
+        Output directory name
+    suffix : str
+        suffix for results: train, test or both 
+    prefix : str
+        Best match for known or best match for predicted
+    plot_hist_flag : bool, optional
+        Plot F1 score histograms of best matches or not. The default is 1.
 
     Returns
     -------
-    avged_f1_score : TYPE
-        DESCRIPTION.
+    avged_f1_score : float
+        Average F1 score
 
     '''
     max_f1_scores = [match[2] for match in best_matches]
@@ -226,16 +226,16 @@ def plot_f1_scores(best_matches,out_comp_nm,suffix,prefix,plot_hist_flag=1):
     
 def plot_pr_curve_FMM(Metric,fin_list_graphs,out_comp_nm):
     '''
-    
+    Plot PR curve using FMM metric and individual complex score thresholds
 
     Parameters
     ----------
-    Metric : TYPE
-        DESCRIPTION.
-    fin_list_graphs : TYPE
-        DESCRIPTION.
-    out_comp_nm : TYPE
-        DESCRIPTION.
+    Metric : numpy.ndarray
+        Matrix of match scores between test and predicted complexes
+    fin_list_graphs : list[(set(str),float)]
+        List of tuples of set of predicted complex nodes and their scores. 
+    out_comp_nm : str
+        Output directory name
 
     Returns
     -------
@@ -271,21 +271,21 @@ def plot_pr_curve_FMM(Metric,fin_list_graphs,out_comp_nm):
 
 def f1_similarity(P,T):
     '''
-    
+    Calculate f1 similarity measure between a predicted and a known complex
 
     Parameters
     ----------
-    P : TYPE
-        DESCRIPTION.
-    T : TYPE
-        DESCRIPTION.
+    P : set(str)
+        Predicted complex nodes
+    T : set(str)
+        True complex nodes
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
-    C : TYPE
-        DESCRIPTION.
+    F1_score: float
+        F1 similarity score
+    C : set(str)
+        Common nodes between predicted and known complexes
 
     '''
     C = len(T.intersection(P))
@@ -306,34 +306,51 @@ def f1_similarity(P,T):
 
 def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp,out_comp_nm,suffix,dir_nm,plot_pr_flag=0,gt_names=[],plot_hist_flag=1):
     '''
-    
+    Compute evaluation metrics - FMMF, CMMF, UnSPA
 
     Parameters
     ----------
-    known_complex_nodes_list : TYPE
-        DESCRIPTION.
-    fin_list_graphs : TYPE
-        DESCRIPTION.
-    N_pred_comp : TYPE
-        DESCRIPTION.
-    N_test_comp : TYPE
-        DESCRIPTION.
-    out_comp_nm : TYPE
-        DESCRIPTION.
-    suffix : TYPE
-        DESCRIPTION.
-    dir_nm : TYPE
-        DESCRIPTION.
-    plot_pr_flag : TYPE, optional
-        DESCRIPTION. The default is 0.
-    gt_names : TYPE, optional
-        DESCRIPTION. The default is [].
-    plot_hist_flag : TYPE, optional
-        DESCRIPTION. The default is 1.
+    known_complex_nodes_list : list[list[str]]
+        List of list of nodes (proteins) in each known complex.
+    fin_list_graphs : list[(set(str),float)]
+        List of tuples of set of predicted complex nodes and their scores
+    N_pred_comp : int
+        No. of predicted complexes
+    N_test_comp : int
+        No. of test complexes
+    out_comp_nm : str
+        Output directory name
+    suffix : str
+        suffix for results: train, test or both 
+    dir_nm : str
+        Directory name correspondig to experiment, ex: hu.MAP
+    plot_pr_flag : bool, optional
+        Plot PR curve or notThe default is False.        
+    gt_names : TYPE(list[string]), optional
+        DESCRIPTION. List of cluster names for each cluster in gt_lines in the same orders. The default is [].
+    plot_hist_flag : bool, optional
+        Plot F1 score histograms of best matches or not. The default is 1.
 
     Returns
     -------
-    None.
+    avg_f1_score: float
+        Average of average F1 scores of best matches for known and best matches for predicted
+    net_f1_score: float
+        CMMF
+    PPV: float
+        Unbiased PPV
+    Sn: float
+        Unbiased Sn
+    acc_unbiased: float
+        UnSPA
+    prec_FMM: float
+        FMM precision
+    recall_FMM: float
+        FMM recall
+    f1_FMM: float
+        FMM F1 score
+    n_matches: int
+        No. of matches in FMMF
 
     '''
     Metric = np_zeros((N_test_comp, N_pred_comp))
@@ -402,19 +419,19 @@ def one2one_matches(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_te
 
 def f1_qi(Metric):
     '''
-    
+    Compute Qi et al metrics from similarity matrix as input
 
     Parameters
     ----------
-    Metric : TYPE
-        DESCRIPTION.
+    Metric : numpy.ndarray
+        Matrix of match scores between test and predicted complexes
 
     Returns
     -------
-    prec : TYPE
-        DESCRIPTION.
-    recall : TYPE
-        DESCRIPTION.
+    prec: float
+        Qi et al Precision
+    recall: float
+        Qi et al Recall        
 
     '''
     max_i = Metric.max(axis=0)
@@ -428,16 +445,16 @@ def f1_qi(Metric):
 
 def plot_pr_curve_orig(Metric,fin_list_graphs,out_comp_nm):
     '''
-    
+    Plot PR curve for Qi et measure using different Qi overlap measure thresholds
 
     Parameters
     ----------
-    Metric : TYPE
-        DESCRIPTION.
-    fin_list_graphs : TYPE
-        DESCRIPTION.
-    out_comp_nm : TYPE
-        DESCRIPTION.
+    Metric : numpy.ndarray
+        Matrix of match scores between test and predicted complexes
+    fin_list_graphs : list[(set(str),float)]
+        List of tuples of set of predicted complex nodes and their scores
+    out_comp_nm : str
+        Output directory name
 
     Returns
     -------
@@ -474,33 +491,33 @@ def plot_pr_curve_orig(Metric,fin_list_graphs,out_comp_nm):
     
 def node_comparison_prec_recall(known_complex_nodes_list, fin_list_graphs, N_pred_comp, N_test_comp, p, out_comp_nm,plot_pr_flag=False):
     '''
-    
+    Compute Qi et al metrics
 
     Parameters
     ----------
-    known_complex_nodes_list : TYPE
-        DESCRIPTION.
-    fin_list_graphs : TYPE
-        DESCRIPTION.
-    N_pred_comp : TYPE
-        DESCRIPTION.
-    N_test_comp : TYPE
-        DESCRIPTION.
-    p : TYPE
-        DESCRIPTION.
-    out_comp_nm : TYPE
-        DESCRIPTION.
-    plot_pr_flag : TYPE, optional
-        DESCRIPTION. The default is False.
+    known_complex_nodes_list : list[list[str]]
+        List of list of nodes (proteins) in each known complex.
+    fin_list_graphs : list[(set(str),float)]
+        List of tuples of set of predicted complex nodes and their scores
+    N_pred_comp : int
+        No. of predicted complexes
+    N_test_comp : int
+        No. of test complexes
+    p : float
+        Threshold in Qi overlap measure
+    out_comp_nm : str
+        Output directory name
+    plot_pr_flag : bool, optional
+        Plot PR curve or not. The default is False.
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
+    Precision: float
+        Qi et al Precision
+    Recall: float
+        Qi et al Recall
+    F1_score: float
+        Qi et al F1 score
 
     '''
     N_matches_test = 0
@@ -543,18 +560,18 @@ def node_comparison_prec_recall(known_complex_nodes_list, fin_list_graphs, N_pre
 
 def plot_size_dists(known_complex_nodes_list, fin_list_graphs, sizes_orig, out_comp_nm):
     '''
-    
+    Plot size (no. of nodes in a complex) distributions of known and predicted and complexes
 
     Parameters
     ----------
-    known_complex_nodes_list : TYPE
-        DESCRIPTION.
-    fin_list_graphs : TYPE
-        DESCRIPTION.
-    sizes_orig : TYPE
-        DESCRIPTION.
-    out_comp_nm : TYPE
-        DESCRIPTION.
+    known_complex_nodes_list : list[list[str]]
+        List of list of nodes (proteins) in each known complex.
+    fin_list_graphs : list[(set(str),float)]
+        List of tuples of set of predicted complex nodes and their scores
+    sizes_orig : list[int]
+        List of no. of nodes in predicted complexes
+    out_comp_nm : str
+        Output directory name
 
     Returns
     -------
@@ -590,17 +607,17 @@ def remove_unknown_prots(fin_list_graphs_orig, prot_list, min_len = 3):
 
     Parameters
     ----------
-    fin_list_graphs_orig : TYPE
-        DESCRIPTION.
-    prot_list : TYPE
-        DESCRIPTION.
-    min_len : TYPE, optional
-        DESCRIPTION. The default is 3.
+    fin_list_graphs_orig : list[(set(str),float)]
+        List of tuples of set of predicted complex nodes and their scores
+    prot_list : set(str)
+        List of nodes (proteins) from known complexes. 
+    min_len : int, optional
+        Minimum no. of proteins that need to be there in a complex. The default is 3.
 
     Returns
     -------
-    fin_list_graphs : TYPE
-        DESCRIPTION.
+    fin_list_graphs : list[(set(str),float)]
+        List of tuples of set of predicted complex nodes and their scores
 
     '''
     fin_list_graphs = []
@@ -615,32 +632,33 @@ def remove_unknown_prots(fin_list_graphs_orig, prot_list, min_len = 3):
 def compute_metrics(known_complex_nodes_list, fin_list_graphs,out_comp_nm,N_test_comp,N_pred_comp,inputs,suffix,gt_names,plot_hist_flag=1):
     '''
     
+    Compute evaluation metrics when predicted and known complexes are compared.
 
     Parameters
     ----------
-    known_complex_nodes_list : TYPE
-        DESCRIPTION.
-    fin_list_graphs : TYPE
-        DESCRIPTION.
-    out_comp_nm : TYPE
-        DESCRIPTION.
-    N_test_comp : TYPE
-        DESCRIPTION.
-    N_pred_comp : TYPE
-        DESCRIPTION.
-    inputs : TYPE
-        DESCRIPTION.
-    suffix : TYPE
-        DESCRIPTION.
-    gt_names : TYPE
-        DESCRIPTION.
-    plot_hist_flag : TYPE, optional
-        DESCRIPTION. The default is 1.
+    known_complex_nodes_list : list[list[str]]
+        List of list of nodes (proteins) in each known complex.
+    fin_list_graphs : list[(set(str),float)]
+        List of tuples of set of predicted complex nodes and their scores
+    out_comp_nm : str
+        Output directory name
+    N_test_comp : int
+        No. of test complexes
+    N_pred_comp : int
+        No. of predicted complexes
+    inputs : dict
+        input parameters and their values
+    suffix : str
+        suffix for results: train, test or both 
+    gt_names : TYPE(list[string]), optional
+        List of cluster names for each cluster in gt_lines in the same orders. The default is [].
+    plot_hist_flag : bool, optional
+        Plot F1 score histograms of best matches or not. The default is 1.
 
     Returns
     -------
-    eval_metrics_dict : TYPE
-        DESCRIPTION.
+    eval_metrics_dict : dict
+        Dictionary of evaluation metrics and their values
 
     '''
     eval_metrics_dict = dict()
@@ -668,26 +686,26 @@ def compute_metrics(known_complex_nodes_list, fin_list_graphs,out_comp_nm,N_test
     return eval_metrics_dict
     
 
-def eval_complex(rf=0, rf_nm=0, inputs={}, known_complex_nodes_list=[], prot_list=[], fin_list_graphs=[],suffix="both"):
+def eval_complex(rf=0, rf_nm=0, inputs={}, known_complex_nodes_list=[], prot_list={}, fin_list_graphs=[],suffix="both"):
     '''
+    Evaluate predicted complexes against known complexes
     
-
     Parameters
     ----------
-    rf : TYPE, optional
+    rf : bool, optional
         read flag to read complexes from file. The default is 0.
-    rf_nm : TYPE, optional
-        DESCRIPTION. The default is 0.
-    inputs : TYPE, optional
-        DESCRIPTION. The default is {}.
-    known_complex_nodes_list : TYPE, optional
-        DESCRIPTION. The default is [].
-    prot_list : TYPE, optional
-        DESCRIPTION. The default is [].
-    fin_list_graphs : TYPE, optional
-        DESCRIPTION. The default is [].
-    suffix : TYPE, optional
-        DESCRIPTION. The default is "both".
+    rf_nm : str, optional
+        Name of file to read results from. The default is 0 or ''.
+    inputs : dict
+        input parameters and their values. The default is {}.
+    known_complex_nodes_list : list[list[str]], optional
+        List of list of nodes (proteins) in each known complex. The default is [].       
+    prot_list : set(str), optional
+        List of nodes (proteins) from known complexes. The default is {}.
+    fin_list_graphs : list[(set(str),float)], optional
+        List of tuples of set of predicted complex nodes and their scores. The default is [].       
+    suffix : str
+        suffix for results: train, test or both. The default is "both".
 
     Returns
     -------

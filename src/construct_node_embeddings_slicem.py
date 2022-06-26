@@ -24,9 +24,9 @@ import pandas as pd
 import tensorflow as tf    
 
 
-def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type):
+def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type, g):
     '''
-    
+    Get node embeddings for the graph with image embeddings as attributes is combined=True
 
     Parameters
     ----------
@@ -42,6 +42,8 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
         Name of the graph
     graph_type : string
         directed or undirected graph
+    g : Networkx graph
+        Similarity weighted graph in networkx
 
     Returns
     -------
@@ -305,7 +307,7 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
             cluster_gcn_model = GCN(
                 layer_sizes=[128], activations=["relu"], generator=cluster_generator
             )
-            node_embeddings, node_ids = run_deep_graph_infomax(es, fullbatch_generator,
+            node_embeddings, node_ids = run_deep_graph_infomax(G, es, fullbatch_generator,
                 cluster_gcn_model, cluster_generator, epochs=epochs, reorder=cluster_reorder
             )    
         elif node_embedding_method == 'gat':
@@ -314,14 +316,14 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
             fullbatch_generator = FullBatchNodeGenerator(G, sparse=False)
             gat_model = GAT(
             layer_sizes=[128], activations=["relu"], generator=fullbatch_generator, attn_heads=8,)
-            node_embeddings, node_ids = run_deep_graph_infomax(es, fullbatch_generator,gat_model, fullbatch_generator, epochs=epochs)
+            node_embeddings, node_ids = run_deep_graph_infomax(G, es, fullbatch_generator,gat_model, fullbatch_generator, epochs=epochs)
         elif node_embedding_method == 'APPNP':
             epochs = 100
             es = EarlyStopping(monitor="loss", min_delta=0, patience=20)
             fullbatch_generator = FullBatchNodeGenerator(G, sparse=False)
             appnp_model = APPNP(
             layer_sizes=[128], activations=["relu"], generator=fullbatch_generator)
-            node_embeddings, node_ids = run_deep_graph_infomax(es, fullbatch_generator, appnp_model, fullbatch_generator, epochs=epochs)
+            node_embeddings, node_ids = run_deep_graph_infomax(G, es, fullbatch_generator, appnp_model, fullbatch_generator, epochs=epochs)
         elif node_embedding_method == 'graphSage_dgi':
             epochs = 100
             fullbatch_generator = FullBatchNodeGenerator(G, sparse=False)
@@ -329,7 +331,7 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
             graphsage_generator = GraphSAGENodeGenerator(G, batch_size=1000, num_samples=[5])
             graphsage_model = GraphSAGE(
                 layer_sizes=[128], activations=["relu"], generator=graphsage_generator)
-            node_embeddings, node_ids = run_deep_graph_infomax(es, fullbatch_generator,
+            node_embeddings, node_ids = run_deep_graph_infomax(G, es, fullbatch_generator,
                 graphsage_model, graphsage_generator, epochs=epochs)
     
         # Write node embeddings to file
@@ -340,7 +342,7 @@ def get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_n
             pkl_dump(node_ids,f)    
             
             
-def run_deep_graph_infomax(es, fullbatch_generator,
+def run_deep_graph_infomax(G, es, fullbatch_generator,
     base_model, generator, epochs, reorder=lambda sequence, subjects: subjects
 ):
     '''
@@ -365,7 +367,7 @@ def run_deep_graph_infomax(es, fullbatch_generator,
 
     Returns
     -------
-    node_embeddings : TYPE
+    node_embeddings : numpy.ndarray
         Node embeddings
     node_ids : list[str]
         List of graph nodes
@@ -414,77 +416,82 @@ def cluster_reorder(sequence, subjects):
     return subjects[sequence.node_order]
 
 
-parser = argparse_ArgumentParser("Input parameters")
-parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
-parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True, False], help="Flag to combine image embeddings with graph, opts: True, False or both, i.e., can set default = [True False] or specify True False in command line")
-parser.add_argument("--embeddings_to_combine", nargs='+', default=['vgg'], help="Image embeddings, specify list, ex: specify options in this list with spaces ['siamese','siamese_real','siamese_real_synthetic','siamese_more_negs','siamese_more_projs_wo_4v6c','siamese_noisy','siamese_more_projs_noisy','densenet','vgg','alexnet','efficientnet_b1','efficientnet_b7','resnet-18']")
-parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_top3k_l1"], help="Name of slicem graph, ex: ['all_neigs_graph','top5_graph','top5_graph_unnorm','slicem_edge_list_cosine','slicem_edge_list_l2','slicem_edge_list','slicem_edge_list_euclidean','slicem_edge_list_l1']")
-parser.add_argument("--graph_types", nargs='+', default=["undirected"],help="Type of graph - directed, undirected or both, if running script in ide, specify default = ['directed','undirected']")
-
-args = parser.parse_args()
+def main():
+    parser = argparse_ArgumentParser("Input parameters")
+    parser.add_argument("--dataset_type", default="real", help="Dataset name, opts: real, synthetic, synthetic_noisy")
+    parser.add_argument("--combined_opts", nargs='+', type = bool, default=[True, False], help="Flag to combine image embeddings with graph, opts: True, False or both, i.e., can set default = [True False] or specify True False in command line")
+    parser.add_argument("--embeddings_to_combine", nargs='+', default=['vgg'], help="Image embeddings, specify list, ex: specify options in this list with spaces ['siamese','siamese_real','siamese_real_synthetic','siamese_more_negs','siamese_more_projs_wo_4v6c','siamese_noisy','siamese_more_projs_noisy','densenet','vgg','alexnet','efficientnet_b1','efficientnet_b7','resnet-18']")
+    parser.add_argument("--graph_name_opts", nargs='+', default=["slicem_edge_list_top3k_l1"], help="Name of slicem graph, ex: ['all_neigs_graph','top5_graph','top5_graph_unnorm','slicem_edge_list_cosine','slicem_edge_list_l2','slicem_edge_list','slicem_edge_list_euclidean','slicem_edge_list_l1']")
+    parser.add_argument("--graph_types", nargs='+', default=["undirected"],help="Type of graph - directed, undirected or both, if running script in ide, specify default = ['directed','undirected']")
     
-dataset_type = args.dataset_type
-
-combined_opts = args.combined_opts
-
-embeddings_to_combine = args.embeddings_to_combine
-
-graph_name_opts = args.graph_name_opts
-
-
-graph_types = args.graph_types
-
-for graph_name in graph_name_opts:
-    for graph_type in graph_types:
-        with open('../data/' + dataset_type + '_dataset/graphs/' + graph_name + '.txt','rb') as f:    
-            if graph_type == 'directed':
-                g = nx.read_weighted_edgelist(f, create_using=nx.DiGraph())
-            else:
-                g = nx.read_weighted_edgelist(f)
-                
-        #print(sorted(g.nodes()))
-                
-        for combined in combined_opts:
-            if combined:
-                # Read image node embeddings as features
-                for embedding_to_combine in embeddings_to_combine:
-                    if dataset_type == 'real':
-                        if embedding_to_combine in ['siamese','siamese_noisy','siamese_more_projs_noisy','siamese_more_negs']:
-                            with open('../results/real_all/real_siamese_transferred/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
-                                image_embeddings = np.load(f)
-                        elif embedding_to_combine == 'siamese_real':
-                            with open('../results/real_all/real_own_siamese_0.36/siamese_real/siamese_real_reduced_embeddings.npy', 'rb') as f:
-                                image_embeddings = np.load(f)       
-                        elif embedding_to_combine == 'siamese_real_synthetic':
-                            with open('../results/real_all/real_siamese_real_synthetic/siamese_real_synthetic/siamese_real_synthetic_reduced_embeddings.npy', 'rb') as f:
-                                image_embeddings = np.load(f)                                  
-                        elif embedding_to_combine == 'siamese_more_projs_all':
-                            with open('../results/real_all/real_siamese_more_projs_all_efficientnet/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
-                                image_embeddings = np.load(f) 
-                        elif embedding_to_combine in ['efficientnet_b1','efficientnet_b7']:
-                            with open('../results/real_all/real_siamese_more_projs_all_efficientnet/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
-                                image_embeddings = np.load(f)    
-                        else:
-                            with open('../results/real_all/real_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
-                                image_embeddings = np.load(f)
-                    elif dataset_type in ['synthetic_noisy','synthetic_more_projs_noisy','synthetic_more_projs_wo_4v6c','synthetic_more_projs']: # synthetic             
-                        with open('../results/'+dataset_type+'all/'+dataset_type+'__/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
-                            image_embeddings = np.load(f)                              
-                    else: # synthetic
-                        if embedding_to_combine in ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']:
-                            with open('../results/synthetic_all/synthetic_big_siamese_and_efficientnet_0.33/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
-                                image_embeddings = np.load(f)   
-                        else:                    
-                            with open('../results/synthetic_all/synthetic_original_replicate_0.42/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
-                                image_embeddings = np.load(f)
-                            
-                    node_data = pd.DataFrame(image_embeddings,index=[str(num) for num in range(len(image_embeddings))])
-                    #print(node_data.loc[['85']])
-                    G = StellarGraph.from_networkx(g, node_features=node_data)
-                    get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type)
+    args = parser.parse_args()
+        
+    dataset_type = args.dataset_type
+    
+    combined_opts = args.combined_opts
+    
+    embeddings_to_combine = args.embeddings_to_combine
+    
+    graph_name_opts = args.graph_name_opts
+    
+    
+    graph_types = args.graph_types
+    
+    for graph_name in graph_name_opts:
+        for graph_type in graph_types:
+            with open('../data/' + dataset_type + '_dataset/graphs/' + graph_name + '.txt','rb') as f:    
+                if graph_type == 'directed':
+                    g = nx.read_weighted_edgelist(f, create_using=nx.DiGraph())
+                else:
+                    g = nx.read_weighted_edgelist(f)
                     
-            else:
-                embedding_to_combine = ''
-                G = StellarGraph.from_networkx(g)
-                
-                get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type)
+            #print(sorted(g.nodes()))
+                    
+            for combined in combined_opts:
+                if combined:
+                    # Read image node embeddings as features
+                    for embedding_to_combine in embeddings_to_combine:
+                        if dataset_type == 'real':
+                            if embedding_to_combine in ['siamese','siamese_noisy','siamese_more_projs_noisy','siamese_more_negs']:
+                                with open('../results/real_all/real_siamese_transferred/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                    image_embeddings = np.load(f)
+                            elif embedding_to_combine == 'siamese_real':
+                                with open('../results/real_all/real_own_siamese_0.36/siamese_real/siamese_real_reduced_embeddings.npy', 'rb') as f:
+                                    image_embeddings = np.load(f)       
+                            elif embedding_to_combine == 'siamese_real_synthetic':
+                                with open('../results/real_all/real_siamese_real_synthetic/siamese_real_synthetic/siamese_real_synthetic_reduced_embeddings.npy', 'rb') as f:
+                                    image_embeddings = np.load(f)                                  
+                            elif embedding_to_combine == 'siamese_more_projs_all':
+                                with open('../results/real_all/real_siamese_more_projs_all_efficientnet/siamese/siamese_reduced_embeddings.npy', 'rb') as f:
+                                    image_embeddings = np.load(f) 
+                            elif embedding_to_combine in ['efficientnet_b1','efficientnet_b7']:
+                                with open('../results/real_all/real_siamese_more_projs_all_efficientnet/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                    image_embeddings = np.load(f)    
+                            else:
+                                with open('../results/real_all/real_original_replicate/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                    image_embeddings = np.load(f)
+                        elif dataset_type in ['synthetic_noisy','synthetic_more_projs_noisy','synthetic_more_projs_wo_4v6c','synthetic_more_projs']: # synthetic             
+                            with open('../results/'+dataset_type+'all/'+dataset_type+'__/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                image_embeddings = np.load(f)                              
+                        else: # synthetic
+                            if embedding_to_combine in ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']:
+                                with open('../results/synthetic_all/synthetic_big_siamese_and_efficientnet_0.33/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                    image_embeddings = np.load(f)   
+                            else:                    
+                                with open('../results/synthetic_all/synthetic_original_replicate_0.42/'+embedding_to_combine+'/'+embedding_to_combine+'_reduced_embeddings.npy', 'rb') as f:
+                                    image_embeddings = np.load(f)
+                                
+                        node_data = pd.DataFrame(image_embeddings,index=[str(num) for num in range(len(image_embeddings))])
+                        #print(node_data.loc[['85']])
+                        G = StellarGraph.from_networkx(g, node_features=node_data)
+                        get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type)
+                        
+                else:
+                    embedding_to_combine = ''
+                    G = StellarGraph.from_networkx(g)
+                    
+                    get_graph_embeddings(G, combined, embedding_to_combine,dataset_type, graph_name, graph_type, g)
+                    
+                    
+if __name__ == "__main__":
+    main()

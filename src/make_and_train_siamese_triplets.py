@@ -4,6 +4,7 @@ Created on Fri Dec 10 15:59:42 2021
 
 @author: Meghana
 """
+from argparse import ArgumentParser as argparse_ArgumentParser
 from util.input_functions import get_config, read_data
 from itertools import combinations
 from PIL import Image
@@ -49,7 +50,7 @@ def get_image_triples(dataset_name, target_shape):
 
     data, gt_lines,gt_names = read_data(images_file_name, images_true_labels, sep, sep2)
 
-    if len(target_shape) == 0:
+    if args.target_shape_infer_flag:
         target_shape = data[0].shape
 
     logger.info('Lenth of data {}',len(data))
@@ -136,8 +137,14 @@ def get_tf_dataset(positive_images, negative_images, anchor_images):
     return dataset
 
 
-# Options: datasets = ['real', 'synthetic_more_projs_noisy','synthetic_more_projs','synthetic','synthetic_noisy']
-datasets = ['real', 'synthetic_more_projs_noisy']
+parser = argparse_ArgumentParser("Input parameters")
+parser.add_argument("--datasets", nargs='+', default=['real', 'synthetic_more_projs_noisy'], help="Name of datasets, ex: ['real', 'synthetic_more_projs_noisy','synthetic_more_projs','synthetic','synthetic_noisy']")
+parser.add_argument("--target_shape_dimension_size", default=100, help="Dimension of target shape.")
+parser.add_argument("--target_shape_infer_flag", default=0, help="Infer dimension from dataset")
+
+args = parser.parse_args()
+
+datasets = args.datasets
 
 exp_name = '_'.join(datasets)
 out_dir_orig = exp_name + 'maketriplets'
@@ -147,7 +154,7 @@ if not os.path.exists('./' + out_dir_orig):
 # Setting logger
 logger.add('./' + out_dir_orig + '/log_file.txt',level="INFO")
 n_negs_sampled = 10
-target_shape = (100,100)
+target_shape = (args.target_shape_dimension_size,args.target_shape_dimension_size)
 anchor_images = []
 positive_images = []
 negative_images = []
@@ -405,7 +412,3 @@ gradients passed to the optimizer to update the model weights at every step. For
 [Intro to Keras for researchers](https://keras.io/getting_started/intro_to_keras_for_researchers/)
 and [Writing a training loop from scratch](https://www.tensorflow.org/guide/keras/writing_a_training_loop_from_scratch?hl=en).
 """
-
-
-    
-
