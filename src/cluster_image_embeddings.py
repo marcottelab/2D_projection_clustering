@@ -228,6 +228,7 @@ def get_image_wise_cluster_labels(vectors,gt_lines,index_start):
         for image_ind in cluster:
             image_wise_cluster_labels[int(image_ind)-index_start] = cluster_ind
             
+            
     return image_wise_cluster_labels
 
 
@@ -413,7 +414,7 @@ def reduce_dimensions(vectors, n_dims = 50):
     return vectors_reduced
     
 
-def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 'euclidean',main_results_dir='../results'):
+def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, gt_names, dist_metric = 'euclidean',main_results_dir='../results'):
     '''
     Plots TSNE on all data using the specified metric
     Parameters:    
@@ -425,11 +426,68 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, dist_metric = 
     method = manifold.TSNE(n_components=2, init="pca", random_state=0, metric = dist_metric)
     
     Y = method.fit_transform(vectors_reduced)
-    plt.figure(figsize=(15, 8))
-    plt.scatter(Y[:, 0], Y[:, 1], c = image_wise_true_labels, cmap='viridis')
-    plt.axis("tight")
-    plt.legend()    
-    plt.savefig(main_results_dir + '/' + out_dir_emb + '/embedding_tsne.jpg')
+    
+    n_classes = len(set(image_wise_true_labels))
+    
+    diff_colors_list_fixed = [np.array([[0.3457559 , 0.55905827, 0.82117878]]), 
+                              np.array([[0.26160068, 0.6841755 , 0.75952533]]), 
+                              np.array([[0.38219951, 0.70277622, 0.28288882]]), 
+                              np.array([[0.90228767, 0.59949946, 0.45473147]]), 
+                              np.array([[0.46020073, 0.23543775, 0.48584243]]), 
+                              np.array([[0.7827978 , 0.89998952, 0.98915007]]), 
+                              np.array([[0.8462942 , 0.01103685, 0.77265595]]), 
+                              np.array([[0.18074287, 0.42777851, 0.69501253]]), 
+                              np.array([[0.9680689 , 0.83262389, 0.84637277]]), 
+                              np.array([[0.53541501, 0.1221299 , 0.98310477]]), 
+                              np.array([[0.5853483 , 0.88570956, 0.62921587]]), 
+                              np.array([[0.72692145, 0.77815712, 0.86430729]]), 
+                              np.array([[0.75677848, 0.81589046, 0.4499639 ]]), 
+                              np.array([[0.72400129, 0.44154602, 0.72959349]]), 
+                              np.array([[0.95657965, 0.97237277, 0.37744636]]), 
+                              np.array([[0.26646396, 0.59516464, 0.57971231]]), 
+                              np.array([[0.76000252, 0.21777765, 0.65589281]]), 
+                              np.array([[0.79556958, 0.75577962, 0.3899597 ]]), 
+                              np.array([[0.68897906, 0.80750367, 0.79761243]]), 
+                              np.array([[0.89520731, 0.10052996, 0.65629483]]), 
+                              np.array([[0.65480282, 0.94389686, 0.27497054]]), 
+                              np.array([[0.43711918, 0.95591558, 0.69391039]]), 
+                              np.array([[0.04287057, 0.89577048, 0.14567296]]), 
+                              np.array([[0.00502088, 0.23801188, 0.0114243 ]]), 
+                              np.array([[0.83189672, 0.97171536, 0.68429438]]), 
+                              np.array([[0.26305008, 0.46343431, 0.31870855]]), 
+                              np.array([[0.22394731, 0.503383  , 0.31687779]]), 
+                              np.array([[0.63161589, 0.6717516 , 0.37782211]]), 
+                              np.array([[0.56370655, 0.32879629, 0.03594461]]), 
+                              np.array([[0.87672986, 0.06079454, 0.38370234]]), 
+                              np.array([[0.81261996, 0.40369241, 0.87148381]]), 
+                              np.array([[0.23532809, 0.95052347, 0.61813889]]), 
+                              np.array([[0.65689502, 0.83417387, 0.94463902]]), 
+                              np.array([[0.20394688, 0.49266594, 0.41829996]]), 
+                              np.array([[0.62408518, 0.22560799, 0.4332037 ]])]
+
+    if n_classes <= len(diff_colors_list_fixed):
+        diff_colors_list = diff_colors_list_fixed
+    else:    
+        diff_colors_list = [np.array([[random.uniform(0,1), random.uniform(0,1), random.uniform(0,1)]]) for i in range(n_classes)]
+
+    markers = ["s","o",".","v","^","<",">","1","2","3","4","8","p","P","h","H","+","x","X","D","d"]
+    fig, ax = plt.subplots()
+    
+    if -1 in image_wise_true_labels:
+        gt_names.append('unk')
+        
+    for i, c in enumerate(np.unique(image_wise_true_labels)):
+        if i < len(markers):
+            mk = markers[i]
+        else:
+            mk = markers[2]
+        ax.scatter(Y[:,0][image_wise_true_labels==c],Y[:,1][image_wise_true_labels==c],c=diff_colors_list[i], marker=mk, label = gt_names[c])
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Classes")
+
+    plt.savefig(main_results_dir + '/' + out_dir_emb + '/embedding_tsne.jpg', bbox_inches='tight', dpi=300)
     
 
 # def cluster_hyperparameter_optimization_clusteval(data_to_cluster,clustering_method):
@@ -614,67 +672,42 @@ def main():
     # Main driver
     
     parser = argparse_ArgumentParser("Input parameters")
-    parser.add_argument("--graph_names", nargs='+', default=[""], help="Name of slicem graph, specify as list")
+    parser.add_argument("--graph_names", nargs='+', default=[""], help="Name of slicem graph, specify as list, ex: '','slicem_edge_list_l1','slicem_edge_list_euclidean','slicem_edge_list_cosine'")
     parser.add_argument("--graph_types", nargs='+', default=[""],help="Type of graph - directed, undirected or both")    
-    parser.add_argument("--datasets", nargs='+', default=["real"], help="Dataset name, opts: real, synthetic, synthetic_noisy")
-    parser.add_argument("--out_dir_suffixes", nargs='+', default=[''], help="Suffix of output directory:'_combined_externally','_combined_internally' ")
-    parser.add_argument("--node_attribute_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings, ex: 'resnet-18', 'densenet','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7'")
-    parser.add_argument("--graph_embedding_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings")
-    parser.add_argument("--embedding_methods", nargs='+', default=['efficientnet_b1'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage'")
+    parser.add_argument("--datasets", nargs='+', default=["real"], help="Dataset name, opts: real, synthetic, synthetic_noisy, synthetic_more_projs")
+    parser.add_argument("--out_dir_suffixes", nargs='+', default=[''], help="Suffix of output directory: ex: '', '_siamese_node_embedding', '_combined_externally','_combined_internally' ")
+    parser.add_argument("--node_attribute_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings, ex: '', 'resnet-18', 'densenet','vgg','alexnet','siamese_more_projs_all','siamese','efficientnet_b1','efficientnet_b7'")
+    parser.add_argument("--graph_embedding_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings, ex: '','metapath2vec','wys','graphWave','node2vec' ")
+    parser.add_argument("--embedding_methods", nargs='+', default=['efficientnet_b1'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage' OR 'siamese_noisy','alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all'")
     parser.add_argument("--eval_SLICEM", default=0, help="Evaluate SLICEM results")
-    parser.add_argument("--main_results_dir", default="../results", help="Main directory containing results")
+    parser.add_argument("--main_results_dir", default="../results", help="Main directory containing results, ex: '.' ")
+    parser.add_argument("--find_best_clustering_method", default=1, help="Hyperparameter tuning to find best clustering method and parameters")
+    parser.add_argument("--clustering_methods", default=[DBSCAN(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()], help="Clustering methods and parameters to use, ex: DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()")
+    
+    
     args = parser.parse_args()
+    
+    # use clustering method if specified to do so
+    if not args.find_best_clustering_method:
+        best_clustering_methods = [(meth, str(meth)) for meth in args.clustering_methods]
 
-    #graph_names = ['slicem_edge_list_l1','slicem_edge_list_euclidean']
-    #graph_names = ['slicem_edge_list_cosine']
-    #graph_names = ['']
+
     graph_names = args.graph_names
     
-    #graph_types = ['undirected','directed']
-    #graph_types = ['directed']
-    #graph_types = ['']
     graph_types = args.graph_types
     
-    #datasets = ['real','synthetic']
-    #datasets = ['real']
-    #datasets = ['synthetic']  
-    #datasets = ['synthetic_more_projs']
-    #datasets = ['synthetic_noisy']
     datasets = args.datasets    
     print(datasets)
 
-    #out_dir_suffixes = [''] # experiment name     
-    #out_dir_suffixes = ['_siamese_node_embedding'] # experiment name     
-    #out_dir_suffixes = ['_combined_externally','_combined_internally']
     out_dir_suffixes = args.out_dir_suffixes
     
-    #graph_embedding_methods = ['']
     graph_embedding_methods = args.graph_embedding_methods
-    
-    #graph_embedding_methods = ['metapath2vec','wys','graphWave','node2vec']
-    
+
+    node_attribute_methods = args.node_attribute_methods
     
     #embedding_methods = ['slicem-graph-' + graph_embedding_method for graph_embedding_method in graph_embedding_methods]
     
-    #embedding_methods = ['attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage']
-    #node_attribute_methods = ['densenet','siamese','vgg','alexnet']
-    #node_attribute_methods = ['siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
-    #node_attribute_methods = ['densenet','siamese','vgg','alexnet','siamese_more_projs_all','efficientnet_b1','efficientnet_b7']
-    #node_attribute_methods = ['']
-    node_attribute_methods = args.node_attribute_methods
-    
-    #embedding_methods = ['slicem-graph-' + graph_embedding_method]
-    #embedding_methods = ['densenet']
-    #embedding_methods = ['siamese']
-    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg']
-    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
-    #embedding_methods = ['siamese_noisy','alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
-    embedding_methods = args.embedding_methods
-    
-    #embedding_methods = ['alexnet','densenet','resnet-18', 'vgg','siamese']
-    #embedding_methods = ['efficientnet_b1','efficientnet_b7','siamese_more_projs_all']
-    #embedding_methods = ['efficientnet_b1','efficientnet_b7','siamese_more_projs_all','alexnet','densenet','resnet-18', 'vgg','siamese']
-    
+    embedding_methods = args.embedding_methods    
  
     n_emb = len(embedding_methods)
     n_graph_emb = len(graph_embedding_methods)
@@ -682,11 +715,7 @@ def main():
     graph_embedding_methods = graph_embedding_methods*n_emb
     embedding_methods = list(np.repeat(embedding_methods,n_graph_emb))
         
-    #clustering_methods = [DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()]
-    #best_clustering_methods = [(method,str(method)) for method in clustering_methods]
     
-    
-    #eval_SLICEM = False
     eval_SLICEM = int(args.eval_SLICEM)
     print(eval_SLICEM)
 
@@ -709,15 +738,7 @@ def main():
                                   }
     
     # To do: Add mean shift
-    
-    # cluster_hyper_param_ranges = {
-    #                               "OPTICS":
-    #                                   {"max_eps":np.arange(0.25,3,0.25),
-    #                                     "min_samples":range(2,10)}
-    #                               }    
-    
-    #main_results_dir = '.'
-    #main_results_dir = '../results'
+
     main_results_dir = args.main_results_dir
     
     
@@ -796,10 +817,7 @@ def main():
                     for i,embedding_method in enumerate(embedding_methods):
                         graph_embedding_method = graph_embedding_methods[i]
                         logger.info(embedding_method)
-                            
-                        # Skip siamese for real dataset 
-                        # if dataset == 'real' and embedding_method == 'siamese':
-                        #     continue                        
+                                                
                         for node_attribute_method in node_attribute_methods:
                             out_dir_emb = out_dir_orig + '/'+embedding_method + str(graph_embedding_method)+node_attribute_method
                             if not os.path.exists(main_results_dir + '/' + out_dir_emb):
@@ -845,19 +863,20 @@ def main():
                 
                             # Plot TSNEs
                             try:
-                                plot_tsne(data_to_cluster,out_dir_emb,image_wise_cluster_labels, silhouette_dict['max_silhouette_distance'] ,main_results_dir)                
+                                plot_tsne(data_to_cluster,out_dir_emb,image_wise_cluster_labels, gt_names, silhouette_dict['max_silhouette_distance'] ,main_results_dir)                
                             except Exception as e: # Add traceback
                                 logger.error('ERROR in tsne plot:')
                                 logger.error(str(e))
                             
                             # Set distance threshold based on PCA variance
-                            
-                            # Training clustering hyper parameters using training data
-                            
-                            best_method,best_method_name = cluster_hyperparameter_optimization(cluster_hyper_param_ranges,train_cluster_array,train_image_wise_cluster_labels,index_start,embedding_method,train_clusters,train_cluster_names,n_true_clusters,out_dir_orig,dataset,silhouette_dict['max_silhouette_distance'],main_results_dir,graph_embedding_method,node_attribute_method)
-                
-                            # Final clustering on full data using the best method and parameters
-                            best_clustering_methods = [(best_method,best_method_name)]
+                                                        
+                            if args.find_best_clustering_method:
+                                # Training clustering hyper parameters using training data
+                                
+                                best_method,best_method_name = cluster_hyperparameter_optimization(cluster_hyper_param_ranges,train_cluster_array,train_image_wise_cluster_labels,index_start,embedding_method,train_clusters,train_cluster_names,n_true_clusters,out_dir_orig,dataset,silhouette_dict['max_silhouette_distance'],main_results_dir,graph_embedding_method,node_attribute_method)
+                    
+                                # Final clustering on full data using the best method and parameters
+                                best_clustering_methods = [(best_method,best_method_name)]
                             
                             for clustering_method_tup in best_clustering_methods:
                                 clustering_method,clustering_method_name = clustering_method_tup
@@ -883,8 +902,6 @@ def main():
                                 eval_metrics_dict['Graph Node Embedding Method']  = str(graph_embedding_method) + node_attribute_method
                                 eval_metrics_dict['Clustering Method']  = str(clustering_method).split('(')[0]
                                 eval_metrics_dict['Clustering Parameters']  = str(clustering_method).split('(')[1][:-1]
-
-
                                 
                                 results_df = results_df.append(pd.Series(eval_metrics_dict,name = embedding_method + ' ' + str(graph_embedding_method) +' '+ node_attribute_method +  ' embedding ' +  str(clustering_method) + ' clustering'))
                                 
@@ -909,7 +926,6 @@ def main():
                         results_df = results_df.append(pd.Series(eval_metrics_dict_SLICEM,name = 'SLICEM'))
                         
                     #results_df.sort_values(by='No. of clusters',key=lambda x: abs(x-n_true_clusters),inplace=True)
-                    #results_df.sort_values(by='3 F1 score average',ascending=False,inplace=True)
                     if ('FMM F1 score' in eval_metrics_dict):
                         results_df.sort_values(by='FMM F1 score',ascending=False,inplace=True)
                         
@@ -921,7 +937,6 @@ def main():
                         
                     if ('FMM F1 score w/o junk' in test_eval_metrics_dict):
                         test_results_df.sort_values(by='FMM F1 score w/o junk',ascending=False,inplace=True)                             
-                    # check results stability
 
                     embedding_eval_df = embedding_eval_df.round(3)
                     test_results_df = test_results_df.round(3)
