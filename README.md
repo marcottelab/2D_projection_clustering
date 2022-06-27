@@ -19,7 +19,9 @@ Birch, DBSCAN, Affinity Propagation, OPTICS
 
 
 ## Installation
+```
 pip install -r requirements.txt --upgrade
+```
 
 ## Instructions
 
