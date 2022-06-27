@@ -3,17 +3,18 @@
 For 3D particle reconstruction, we cluster the particle's 2D projections in different orientations.  
 We provide functionality to use one or more of 7 image embedding methods and 10 similarity graph node embeddings to represent the 2D projections and subsequently cluster the embeddings using 4 clustering algorithms and 8 graph clustering methods.
 
-### Image embedding methods:
+#### Image embedding methods:
 Unsupervised: AlexNet, VGG-11, DenseNet, ResNet-18, EfficientNet-B1, and EfficientNet-B7
+
 Supervised: Siamese neural network fine-tuning ResNet-50
 
-### Graph node embedding methods:
+#### Graph node embedding methods:
 Node2Vec, Metapath2Vec, GraphWave, Watch Your Step, Attri2Vec, GraphSAGE, Deep Graph Infomax using each of the models - GCN, GAT, APPNP, and Cluster-GCN.
 
-### Graph clustering methods:
+#### Graph clustering methods:
 strongly and weakly connected components, walk trap, edge betweenness, greedy modularity, k-clique, semi-synchronous and asynchronous label propagation
 
-### Clustering methods: 
+#### Clustering methods: 
 Birch, DBSCAN, Affinity Propagation, OPTICS
 
 
@@ -99,10 +100,12 @@ python src/test_cluster_image_embeddings.py
 
 ## References
 Code to compute evaluation metrics is adapted from:
-https://github.com/marcottelab/super.complex  
+https://github.com/marcottelab/super.complex
+
 https://github.com/marcottelab/protein_complex_maps  
 
 Synthetic and real data, and slicem code is from:
 https://doi.org/10.1016/j.jsb.2019.107416
+
 https://github.com/marcottelab/SLICEM
 
