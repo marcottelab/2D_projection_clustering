@@ -91,10 +91,11 @@ python cluster_image_embeddings.py --graph_names slicem_edge_list_l2 --graph_typ
 
 ### Configuring scripts help
 The above instructions use default arguments provided in the script. 
-To provide custom arguments for each of the scripts, input arguments options can be viewed by running: 
+To provide custom arguments for each of the scripts, input arguments options can be viewed by running:
+```
 python script_name.py --help 
-For each command, add the desired argument directly on the terminal, 
-ex for variable called arg_name with value arg_value: python script_name.py --arg_name arg_value.
+```
+For each command, add the desired argument directly on the terminal.
 
 ## Unit tests
 ```
