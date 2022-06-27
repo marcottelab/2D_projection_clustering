@@ -1,0 +1,13 @@
+name: slicem
+
+dependencies:
+  - python=3.6.8
+  - scipy
+  - pandas
+  - matplotlib
+  - numpy
+  - scikit-image
+  - pip:
+    - mrcfile
+    - networkx
+    - python-igraph

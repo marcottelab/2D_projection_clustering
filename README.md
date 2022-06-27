@@ -33,7 +33,7 @@ ii.In Network plot tab, specify top n neighbors or k nearest neighbors, and clic
 
 iii.In Outputs tab, specify directory to save files in and click Write edge list. This edge list is the graph used for clustering in the next steps.
 
-For more detailed instructions, refer manual.pdf
+For more detailed instructions, refer src/SLICEM/manual.pdf
 
 4. Clustering graph using one or more of different graph clustering methods - kclique, label propagation, walk trap, edge betweenness, conected components, greedy modularity:
 ```
@@ -90,4 +90,5 @@ https://github.com/marcottelab/protein_complex_maps
 
 Synthetic and real data, and slicem code is from:
 https://doi.org/10.1016/j.jsb.2019.107416
+https://github.com/marcottelab/SLICEM
 
