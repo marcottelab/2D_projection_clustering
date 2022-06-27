@@ -44,6 +44,7 @@ python src/SLICEM/slicem.py
 python src/SLICEM/slicem_gui.py
 ```
 In the GUI that opens up:
+
 i. In Inputs tab, specify all by all graph as input and click on 'Load inputs'. 
 
 ii.In Network plot tab, specify top n neighbors or k nearest neighbors, and click on 'plot network'
