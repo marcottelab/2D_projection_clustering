@@ -26,18 +26,18 @@ python src/SLICEM/slicem.py
 ```
 python src/SLICEM/slicem_gui.py
 ```
-In the GUI that opens up: 
-	In Inputs tab, specify all by all graph as input and click on 'Load inputs'. 
-	In Network plot tab, specify top n neighbors or k nearest neighbors, and click on 'plot network'
-	In Outputs tab, specify directory to save files in and click Write edge list. This edge list is the graph used for clustering in the next steps.
+In the GUI that opens up:
+i. In Inputs tab, specify all by all graph as input and click on 'Load inputs'. 
+
+ii.In Network plot tab, specify top n neighbors or k nearest neighbors, and click on 'plot network'
+
+iii.In Outputs tab, specify directory to save files in and click Write edge list. This edge list is the graph used for clustering in the next steps.
 
 For more detailed instructions, refer manual.pdf
 
 4. Clustering graph using one or more of different graph clustering methods - kclique, label propagation, walk trap, edge betweenness, conected components, greedy modularity:
 ```
 python src/graph_clustering_igraph.py
-```
-```
 python src/graph_clustering_nx.py
 ```
 Evaluate the obtained clusters with:
@@ -49,16 +49,19 @@ python src/evaluate_graph_clustering.py
 python src/make_and_train_siamese_triplets.py
 ```
 Add config to find the trained siamese model during extraction of image embeddings, in the function siamese_embedding in src/siamese_embedding.py and get_image_embedding in src/cluster_image_embeddings.py
+
 6. Constructing image embeddings (using one or more of siamese, efficientnet-b1, efficientnet-b7,resnet-18,vgg, densenet, alexnet) for 2D projections and clustering with best of Birch, OPTICS, Affinity Propagation and DBSCAN. With example arguments:
 ```
 python src/cluster_image_embeddings.py --graph_names "" --graph_types "" --datasets synthetic_noisy --out_dir_suffixes "" --graph_embedding_methods "" --node_attribute_methods '' --embedding_methods densenet siamese vgg alexnet siamese_more_projs_all efficientnet_b1 efficientnet_b7 --eval_SLICEM False --main_results_dir ../results --find_best_clustering_method 1
 ```
 Add config to use these image embeddings as attributes in graph clustering later by updating in the function main of construct_node_embeddings_slicem.py
+
 7. Constructing node embeddings from similarity graph using one or more embedding methods - node2vec, metapath2vec, Watch your step and Graphwave, and constructing graph node embeddings with image embeddings as node attributes using one or more embedding methods from graphSage, attri2vec, gcn, cluster_gcn, gat and APPNP:
 ```
 python src/construct_node_embeddings_slicem.py
 ```
 Add config to find node embeddings in the function slicem_graph_embeddings in read_node_embeddings.py for the clustering step
+
 8. Cluster node embeddings constructed with image embeddings as attributes, with best of Birch, OPTICS, Affinity Propagation and DBSCAN. With example arguments:
 ```
 python cluster_image_embeddings.py --graph_names slicem_edge_list_l2 --graph_types directed --datasets synthetic_noisy --out_dir_suffixes _node_embedding --graph_embedding_methods "" --node_attribute_methods siamese_noisy --embedding_methods attri2vec gcn cluster_gcn gat APPNP graphSage --eval_SLICEM 1 --main_results_dir ../results --find_best_clustering_method 1
