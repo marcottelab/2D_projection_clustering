@@ -1,7 +1,21 @@
 # 2D Projection clustering
 
 For 3D particle reconstruction, we cluster the particle's 2D projections in different orientations.  
-Here we experiment with different image embedding methods using image2vec and subsequently cluster the embeddings using different clustering algorithms.
+We provide functionality to use one or more of 7 image embedding methods and 10 similarity graph node embeddings to represent the 2D projections and subsequently cluster the embeddings using 4 clustering algorithms and 8 graph clustering methods.
+
+### Image embedding methods:
+Unsupervised: AlexNet, VGG-11, DenseNet, ResNet-18, EfficientNet-B1, and EfficientNet-B7
+Supervised: Siamese neural network fine-tuning ResNet-50
+
+### Graph node embedding methods:
+Node2Vec, Metapath2Vec, GraphWave, Watch Your Step, Attri2Vec, GraphSAGE, Deep Graph Infomax using each of the models - GCN, GAT, APPNP, and Cluster-GCN.
+
+### Graph clustering methods:
+strongly and weakly connected components, walk trap, edge betweenness, greedy modularity, k-clique, semi-synchronous and asynchronous label propagation
+
+### Clustering methods: 
+Birch, DBSCAN, Affinity Propagation, OPTICS
+
 
 ## Installation
 pip install -r requirements.txt --upgrade
