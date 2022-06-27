@@ -40,8 +40,8 @@ def get_config(dataset='real'):
         index_start = 0
         out_dir = 'synthetic_more_projs'      
     elif dataset == 'synthetic_more_projs_wo_4v6c':
-        images_file_name = '../data/synthetic_more_projs_wo_4v6c_dataset/synthetic_more_projections_wo_4v6c.mrcs' 
-        images_true_labels = '../data/synthetic_more_projs_wo_4v6c_dataset/clusters/true_clustering_wo_4v6c.txt'
+        images_file_name = '../data/synthetic_more_projs_wo_4v6c/synthetic_more_projections_wo_4v6c.mrcs' 
+        images_true_labels = '../data/synthetic_more_projs_wo_4v6c/clusters/true_clustering.txt'
         sep = '\t'
         sep2=','
         index_start = 0

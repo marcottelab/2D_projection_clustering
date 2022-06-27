@@ -54,11 +54,15 @@ def slicem_graph_embeddings(dataset, node_embedding_method='metapath2vec', imple
         vectors = np.array(array_nums)
         
     else: #  stellargraph
+        if dataset == "synthetic_more_projs_wo_4v6c":
+            dataset = "synthetic_more_projs_wo_4v6c"+ '/node_embs/'
+        else:
+            dataset = dataset + '_dataset' + '/graph_embeddings/'
     
-        with open('../data/' + dataset + '_dataset/graph_embeddings/'+graph+graph_type+'_stellar_' + node_embedding_method + embedding_to_combine+ '.npy', 'rb') as f:
+        with open('../data/' + dataset +graph+graph_type+'_stellar_' + node_embedding_method + embedding_to_combine+ '.npy', 'rb') as f:
             node_embeddings = np.load(f)
             
-        with open('../data/' + dataset + '_dataset/graph_embeddings/' + graph+graph_type+'_stellar_' + node_embedding_method + embedding_to_combine+ '_node_ids.list', 'rb') as f:
+        with open('../data/' + dataset + graph+graph_type+'_stellar_' + node_embedding_method + embedding_to_combine+ '_node_ids.list', 'rb') as f:
             node_ids = pkl_load(f)
         
         int_node_ids = [int(node) for node in node_ids]

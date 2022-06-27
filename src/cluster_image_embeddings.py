@@ -16,7 +16,7 @@ import random
 import pickle as pkl
 
 from argparse import ArgumentParser as argparse_ArgumentParser
-from sklearn.cluster import DBSCAN,AffinityPropagation,OPTICS,Birch
+from sklearn.cluster import DBSCAN, AffinityPropagation, OPTICS, Birch
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from img2vec_pytorch import Img2Vec
 from PIL import Image
@@ -430,17 +430,6 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, gt_names, dist
     n_classes = len(set(image_wise_true_labels))
     
     diff_colors_list_fixed = [np.array([[0.3457559 , 0.55905827, 0.82117878]]), 
-                              np.array([[0.26160068, 0.6841755 , 0.75952533]]), 
-                              np.array([[0.38219951, 0.70277622, 0.28288882]]), 
-                              np.array([[0.90228767, 0.59949946, 0.45473147]]), 
-                              np.array([[0.46020073, 0.23543775, 0.48584243]]), 
-                              np.array([[0.7827978 , 0.89998952, 0.98915007]]), 
-                              np.array([[0.8462942 , 0.01103685, 0.77265595]]), 
-                              np.array([[0.18074287, 0.42777851, 0.69501253]]), 
-                              np.array([[0.9680689 , 0.83262389, 0.84637277]]), 
-                              np.array([[0.53541501, 0.1221299 , 0.98310477]]), 
-                              np.array([[0.5853483 , 0.88570956, 0.62921587]]), 
-                              np.array([[0.72692145, 0.77815712, 0.86430729]]), 
                               np.array([[0.75677848, 0.81589046, 0.4499639 ]]), 
                               np.array([[0.72400129, 0.44154602, 0.72959349]]), 
                               np.array([[0.95657965, 0.97237277, 0.37744636]]), 
@@ -453,7 +442,18 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, gt_names, dist
                               np.array([[0.43711918, 0.95591558, 0.69391039]]), 
                               np.array([[0.04287057, 0.89577048, 0.14567296]]), 
                               np.array([[0.00502088, 0.23801188, 0.0114243 ]]), 
-                              np.array([[0.83189672, 0.97171536, 0.68429438]]), 
+                              np.array([[0.83189672, 0.97171536, 0.68429438]]),                               
+                              np.array([[0.26160068, 0.6841755 , 0.75952533]]), 
+                              np.array([[0.38219951, 0.70277622, 0.28288882]]), 
+                              np.array([[0.90228767, 0.59949946, 0.45473147]]), 
+                              np.array([[0.46020073, 0.23543775, 0.48584243]]), 
+                              np.array([[0.7827978 , 0.89998952, 0.98915007]]), 
+                              np.array([[0.8462942 , 0.01103685, 0.77265595]]), 
+                              np.array([[0.18074287, 0.42777851, 0.69501253]]), 
+                              np.array([[0.9680689 , 0.83262389, 0.84637277]]), 
+                              np.array([[0.53541501, 0.1221299 , 0.98310477]]), 
+                              np.array([[0.5853483 , 0.88570956, 0.62921587]]), 
+                              np.array([[0.72692145, 0.77815712, 0.86430729]]), 
                               np.array([[0.26305008, 0.46343431, 0.31870855]]), 
                               np.array([[0.22394731, 0.503383  , 0.31687779]]), 
                               np.array([[0.63161589, 0.6717516 , 0.37782211]]), 
@@ -470,8 +470,9 @@ def plot_tsne(vectors_reduced,out_dir_emb,image_wise_true_labels, gt_names, dist
     else:    
         diff_colors_list = [np.array([[random.uniform(0,1), random.uniform(0,1), random.uniform(0,1)]]) for i in range(n_classes)]
 
-    markers = ["s","o",".","v","^","<",">","1","2","3","4","8","p","P","h","H","+","x","X","D","d"]
-    fig, ax = plt.subplots()
+    markers = [".","v","+","1","8","^","<",">","s","o","2","3","4","p","P","h","H","x","X","D","d"]
+
+    fig, ax = plt.subplots(figsize=(15, 8))
     
     if -1 in image_wise_true_labels:
         gt_names.append('unk')
@@ -672,17 +673,17 @@ def main():
     # Main driver
     
     parser = argparse_ArgumentParser("Input parameters")
-    parser.add_argument("--graph_names", nargs='+', default=[""], help="Name of slicem graph, specify as list, ex: '','slicem_edge_list_l1','slicem_edge_list_euclidean','slicem_edge_list_cosine'")
-    parser.add_argument("--graph_types", nargs='+', default=[""],help="Type of graph - directed, undirected or both")    
-    parser.add_argument("--datasets", nargs='+', default=["real"], help="Dataset name, opts: real, synthetic, synthetic_noisy, synthetic_more_projs")
-    parser.add_argument("--out_dir_suffixes", nargs='+', default=[''], help="Suffix of output directory: ex: '', '_siamese_node_embedding', '_combined_externally','_combined_internally' ")
+    parser.add_argument("--graph_names", nargs='+', default=["slicem_edge_list_l2"], help="Name of slicem graph, specify as list, ex: '','slicem_edge_list_l1','slicem_edge_list_euclidean','slicem_edge_list_cosine'")
+    parser.add_argument("--graph_types", nargs='+', default=["directed"],help="Type of graph - directed, undirected or both")    
+    parser.add_argument("--datasets", nargs='+', default=["synthetic_noisy"], help="Dataset name, opts: real, synthetic, synthetic_noisy, synthetic_more_projs")
+    parser.add_argument("--out_dir_suffixes", nargs='+', default=['_combined_internally'], help="Suffix of output directory: ex: '', '_siamese_node_embedding', '_combined_externally','_combined_internally' ")
     parser.add_argument("--node_attribute_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings, ex: '', 'resnet-18', 'densenet','vgg','alexnet','siamese_more_projs_all','siamese','efficientnet_b1','efficientnet_b7'")
-    parser.add_argument("--graph_embedding_methods", nargs='+', default=[''], help="Image embeddings used as node attributes in the graph embeddings, ex: '','metapath2vec','wys','graphWave','node2vec' ")
-    parser.add_argument("--embedding_methods", nargs='+', default=['efficientnet_b1'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage' OR 'siamese_noisy','alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all'")
+    parser.add_argument("--graph_embedding_methods", nargs='+', default=['wys'], help="Image embeddings used as node attributes in the graph embeddings, ex: '','metapath2vec','wys','graphWave','node2vec' ")
+    parser.add_argument("--embedding_methods", nargs='+', default=['siamese_noisy'], help="Image embeddings - either pure or pure slicem graph, ex: 'attri2vec','gcn','cluster_gcn','gat','APPNP','graphSage' OR 'siamese_noisy','alexnet','densenet','resnet-18', 'vgg','siamese','efficientnet_b1','efficientnet_b7','siamese_more_projs_all'")
     parser.add_argument("--eval_SLICEM", default=0, help="Evaluate SLICEM results")
     parser.add_argument("--main_results_dir", default="../results", help="Main directory containing results, ex: '.' ")
-    parser.add_argument("--find_best_clustering_method", default=1, help="Hyperparameter tuning to find best clustering method and parameters")
-    parser.add_argument("--clustering_methods", default=[DBSCAN(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()], help="Clustering methods and parameters to use, ex: DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()")
+    parser.add_argument("--find_best_clustering_method", default=0, help="Hyperparameter tuning to find best clustering method and parameters")
+    parser.add_argument("--clustering_methods", default=[OPTICS(max_eps=0.5, min_samples=3)], help="Clustering methods and parameters to use, ex: DBSCAN(),MeanShift(),OPTICS(),Birch(n_clusters=None), AffinityPropagation()")
     
     
     args = parser.parse_args()
@@ -880,7 +881,10 @@ def main():
                             
                             for clustering_method_tup in best_clustering_methods:
                                 clustering_method,clustering_method_name = clustering_method_tup
-                                clustering_method_name = clustering_method_name.split('embedding')[1].split('clustering')[0].rstrip()
+                                try:
+                                    clustering_method_name = clustering_method_name.split('embedding')[1].split('clustering')[0].rstrip()
+                                except:
+                                    print('Name does not have the expected format so same being used.')
                                 out_dir = out_dir_emb + '/'+str(clustering_method_name)  
                                 if not os.path.exists(main_results_dir + '/' + out_dir):
                                     os.mkdir(main_results_dir + '/' + out_dir)
